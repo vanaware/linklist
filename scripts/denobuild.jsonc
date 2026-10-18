@@ -1,0 +1,49 @@
+{
+  "$schema": "https://vanaware.github.io/buildit/schema/denobuild.json",
+  "versionPaths": [
+    "packages/core/src/version.ts"
+  ],
+  "forcepackagesversion": true,
+  "targets": {
+    // linklist: local/dev static-site build via Deno's IN-PROCESS bundler (no
+    // esbuild subprocess), so it also runs in sandboxes where esbuild cannot spawn.
+    // Does the whole job declaratively: clean dist, copy the static shell + theme
+    // CSS + config.json, and bundle core/src/entry.ts -> linklist.js (unminified,
+    // linked sourcemap). Invoked by name only (`denobuild -n linklist`). CI/prod
+    // uses the minified esbuild `linklist-dist` target instead.
+    "linklist": {
+      "default": true,
+      "srcdir": "packages/core/src",
+      "distdir": "packages/server/build/dist",
+      "clean": [
+        "*"
+      ],
+      "copyFiles": [
+        {
+          "basedir": "packages/core/public"
+        },
+        {
+          "basedir": "packages/core/themes"
+        },
+        {
+          "basedir": "packages/core/schema"
+        }
+      ],
+      "entryPoints": [
+        "entry.ts"
+      ],
+      "outfile": "linklist.js",
+      "platform": "browser",
+      "format": "esm",
+      "minify": false,
+      "sourcemap": "linked",
+      "keepNames": true,
+      "codeSplitting": false,
+      "packages": "bundle",
+      "inlineImports": true,
+      "banner": {
+        "js": "/*!\n * linklist v__APP_VERSION__ [DEV]\n * (c) 2026 Vanaware - MIT License\n */\n"
+      }
+    }
+  }
+}

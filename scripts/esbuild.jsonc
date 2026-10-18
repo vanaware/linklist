@@ -1,0 +1,86 @@
+{
+  "$schema": "https://vanaware.github.io/buildit/schema/esbuild.json",
+  "versionPaths": [
+    "packages/core/src/version.ts"
+  ],
+  "forcepackagesversion": true,
+  "targets": {
+    // linklist: the ENTIRE static site build, declaratively (no CLI). Runs when
+    // invoked by name (`esbuild -n linklist`). It (1) wipes
+    // packages/server/build/dist, (2) copies the static shell + theme presets + the
+    // config.json into it, and (3) bundles core/src/entry.ts into linklist.js — which
+    // fetches ./config.json at runtime and renders in the browser. Output dir = the
+    // one the `packages/server` static server (`deno task dev`) serves and pages.yml
+    // deploys. DEV variant: unminified, inline sourcemap.
+    "linklist": {
+      "default": true,
+      "srcdir": "packages/core/src",
+      "distdir": "packages/server/build/dist",
+      "clean": [
+        "*"
+      ],
+      "copyFiles": [
+        {
+          "basedir": "packages/core/public"
+        },
+        {
+          "basedir": "packages/core/themes"
+        },
+        {
+          "basedir": "packages/core/schema"
+        }
+      ],
+      "entryPoints": [
+        "entry.ts"
+      ],
+      "outfile": "linklist.js",
+      "platform": "browser",
+      "format": "esm",
+      "bundle": true,
+      "minify": false,
+      "sourcemap": "linked",
+      "conditions": [
+        "browser"
+      ],
+      "metafile": false,
+      "write": true,
+      "legalComments": "eof",
+      "keepNames": true,
+      "splitting": false,
+      "banner": {
+        "js": "/*!\n * linklist v__APP_VERSION__ [DEV]\n * (c) 2026 Vanaware - MIT License\n */\n"
+      }
+    },
+    // linklist PRODUCTION bundle: same pipeline/output as `linklist` but minified
+    // with an external source map. Run with
+    // `esbuild -n linklist-dist`.
+    "linklist-dist": {
+      "default": true,
+      "srcdir": "packages/core/src",
+      "distdir": "packages/core/dist",
+      "clean": [
+        "*"
+      ],
+      "entryPoints": [
+        "entry.ts"
+      ],
+      "outfile": "linklist.js",
+      "platform": "browser",
+      "format": "esm",
+      "bundle": true,
+      "minify": true,
+      "sourcemap": "external",
+      "conditions": [
+        "browser"
+      ],
+      "metafile": false,
+      "write": true,
+      "legalComments": "eof",
+      "keepNames": true,
+      "splitting": false,
+      "banner": {
+        "js": "/*!\n * linklist v__APP_VERSION__\n * (c) 2026 Vanaware - MIT License\n */\n"
+      }
+    }
+  }
+}

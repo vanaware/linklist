@@ -1,0 +1,24 @@
+{
+  "$schema": "https://vanaware.github.io/linklist/config.schema.json",
+  "profile": {
+    "name": "Your Name",
+    "tagline": "What you do, in one line."
+  },
+  "links": [
+    {
+      "title": "GitHub",
+      "url": "https://github.com/yourhandle",
+      "icon": "github",
+      "new_tab": true
+    }
+  ],
+  "theme": {
+    "preset": "minimal-dark",
+    "mode": "auto"
+  },
+  "seo": {
+    "title": "Your Name — links",
+    "description": "All my links in one fast, private page.",
+    "url": "https://yourhandle.github.io"
+  }
+}

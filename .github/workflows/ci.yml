@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check-all:
+    name: Test, Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version-file: .tool-versions
+          cache: true
+
+      - name: Run tests
+        run: deno test -P
+
+      - name: Lint code
+        run: deno lint
+
+      - name: Check formatting
+        run: deno fmt --check

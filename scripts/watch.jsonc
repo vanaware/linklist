@@ -1,0 +1,41 @@
+{
+  "$schema": "https://vanaware.github.io/buildit/schema/watch.json",
+  "targets": {
+    // linklist dev watch: rebuilds core/src/entry.ts -> linklist.js in
+    // packages/server/build/dist on change and re-copies the static shell, theme
+    // CSS and the example config.json. Run with `deno task watch`.
+    "linklist": {
+      "default": true,
+      "srcdir": "packages/core/src",
+      "distdir": "packages/server/build/dist",
+      "copyFiles": [
+        {
+          "basedir": "packages/core/public"
+        },
+        {
+          "basedir": "packages/core/themes"
+        },
+        {
+          "basedir": "packages/core/schema"
+        }
+      ],
+      "entryPoints": [
+        "entry.ts"
+      ],
+      "platform": "browser",
+      "format": "esm",
+      "bundle": true,
+      "minify": false,
+      "sourcemap": "inline",
+      "conditions": [
+        "browser"
+      ],
+      "write": true,
+      "legalComments": "eof",
+      "outfile": "linklist.js",
+      "banner": {
+        "js": "/*!\n * linklist v__APP_VERSION__ [DEV WATCH]\n * (c) 2026 Vanaware - MIT License\n */\n"
+      }
+    }
+  }
+}

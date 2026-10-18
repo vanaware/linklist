@@ -1,0 +1,131 @@
+# Project Guidelines: @vanaware/linklist (Deno + Preact link-in-bio generator)
+
+Welcome! This file (`AGENTS.md`) is automatically injected into the AI's system
+instructions. `@vanaware/linklist` is a **link-in-bio site generator**: it turns a
+single `config.json` into a fast, accessible, private page that deploys to GitHub
+Pages (or Netlify / Vercel / Cloudflare Pages / Nginx).
+
+It was originally derived from `@vanaware/mdBlog`, but the mdBlog engine has since been
+removed. linklist reuses only that engine's UI stack — **Preact + `@preact/signals`,
+BeerCSS, and a self-contained Markdown renderer** — to render a single bio page driven
+by `config.json` (no article tree, no islands, no service worker). Follow these rules
+strictly.
+
+## 0. Language Rule (hard)
+
+All source code, identifiers, comments, JSDoc, log messages, test names, docs and
+commit messages are written in **English**. No exceptions.
+
+## 1. Runtime & Environment (Pure Deno)
+
+- **Deno Only**: runs entirely on Deno (see `.tool-versions`). Do NOT run
+  `npm install` or rely on Node-only APIs.
+- **Dependency Management**: dependencies are declared in `deno.jsonc` using
+  `jsr:` and `npm:` specifiers. `npm:` specifiers are resolved by Deno and do NOT
+  create a local `node_modules` — they are allowed (e.g. `npm:arktype`).
+- **Validation**: config is validated with **ArkType** (type-first, via `npm:`).
+- **JSR Publication (deferred)**: only `@vanaware/linklist-core` is ever a publication
+  candidate; `@vanaware/linklist-server` is a dev-only static server and must stay
+  `publish: false` permanently. The packages are currently `publish: false` and the
+  `jsr-publish.yml` workflow has been removed. When core is ready to publish, keep
+  it JSR-clean anyway (complete JSDoc, valid `deno doc --lint`, README with an
+  executable example per `docs/publish-jsr-rules.md`) and re-add a publish workflow
+  scoped to `packages/core` only.
+- **Bundling**: build with `@vanaware/buildit` (`deno task esbuild` / `denobuild`),
+  emitting the static site into the server `build/dist/` directory.
+
+## 2. Framework & State Management
+
+- **Preact, not React**: use Preact via `htm/preact` (`html` tagged templates).
+- **State via Signals**: all reactive state uses `@preact/signals`
+  (`signal` / `computed` / `effect`). Do NOT use `useState`/`useEffect`/`useContext`
+  for global or complex state; centralize signals/actions/derived state in the
+  state module. The few allowed `useEffect` calls are for post-commit DOM work only.
+- **Components**: keep UI modularized in `packages/core/src/components/`. There are no
+  islands / `hydrateIslands()` — the page is a single client-rendered Preact tree.
+- **Everything in core**: the theme engine (`core/src/theme.ts`), the plugin engine
+  (`core/src/plugin.ts`) and the built-in plugins (`core/src/plugins/`) all live in
+  `packages/core`, alongside the CSS presets in `packages/core/themes`. There is no
+  separate themes or plugins package, and no runtime third-party `theme.script` /
+  `plugins.scripts` until the engine is stable.
+- **Markdown for user text**: end-user text (bio / about / section copy, link
+  subtitle, footer) is authored as **Markdown** and rendered by the self-contained
+  GFM → Preact VNode renderer in `core/src/markdown.ts` (`renderMarkdown` /
+  `renderInlineMarkdown`; raw HTML is dropped for XSS safety). Prefer Markdown for
+  rich, editable copy.
+
+## 3. UI & Styling (BeerCSS)
+
+- **BeerCSS (Material Design 3)** is the styling system. No Tailwind CSS.
+- **Themes**: themes are **BeerCSS presets** selected by `config.theme.preset`
+  (e.g. light / dark), with token overrides (colors, radius, shadow, font) mapped
+  to BeerCSS / `material-dynamic-colors` CSS variables — not hand-written CSS.
+- **Open decision (tracked in `CURRENT.md`)**: whether BeerCSS + fonts are served
+  from a **CDN** (as mdBlog does today) or **self-hosted** in the bundle. Prefer
+  self-hosting when it does not compromise the simplicity of the pipeline; until
+  decided, follow the existing CDN pattern.
+- **Icons**: Google Material Symbols via the `<i>icon_name</i>` pattern, plus
+  inline brand SVGs (e.g. Simple Icons) selected by name in config.
+
+## 4. Product Goals (non-negotiable, reconcile with the stack)
+
+- **Performance**: aim for a high Lighthouse score; ship minimal, code-split JS.
+- **Accessibility**: target **WCAG 2.1 AA** — semantic landmarks, visible focus,
+  correct ARIA, keyboard order, `alt` required for avatars, real `<a>` links.
+- **Privacy off-by-default**: analytics / click counting are DISABLED unless the
+  config explicitly enables them. No user tracking.
+- **Static, portable output**: `deno task build` emits a self-contained site under
+  `dist/` (`index.html`, assets, favicon, `manifest.json`, `sitemap.xml`,
+  `robots.txt`, OG/Twitter/JSON-LD head).
+- **Progressive enhancement (revised)**: the model is pure client render — the served
+  `index.html` is a shell with a `<noscript>` notice, and `linklist.js` renders the page
+  and applies the SEO head at runtime. Google executes JS, but no-JS scrapers see only
+  the shell. If pre-rendered/SSG output is later required for SEO or no-JS, add it as an
+  explicit build step rather than assuming the shell has content.
+
+## 5. Testing Standard
+
+- **BDD Style**: tests use `@std/testing/bdd` (`describe` / `it`); assertions use
+  `@std/assert`. Do NOT use raw `Deno.test()` for new tests.
+- **Testability**: pure validation/render logic is unit-tested without network;
+  plugins and IO-backed code are tested with injected/mocked I/O.
+- **Command**: `deno task test` (or `deno task tests` for the full gate).
+
+## 6. Architecture & SaaS Readiness
+
+- **Decouple schema + render logic from I/O**: keep `packages/core` free of
+  filesystem/network. The only DOM-aware module is the browser entry
+  (`core/src/entry.ts`, bundled to `linklist.js`, not exported from `mod.ts`);
+  the little filesystem I/O the tooling needs lives in `scripts/`. This keeps
+  `core` reusable by a future hosted SaaS. Maintain `core` / `themes` / `plugins`
+  packages.
+- **Build is declarative (buildit)**: the whole static-site build (clean output,
+  copy the shell/themes/config, bundle the entry, stamp the version) is driven by
+  `scripts/esbuild.jsonc` targets, not by a bespoke CLI command.
+- **Config is a single `config.json`** (JSON, not YAML) so the same object can
+  later be served like a database record by the paid tier; keep it serializable
+  and versioned.
+
+## 7. Offline, PWA & Deployment
+
+- **Relative base paths (GitHub Pages subfolder support)**: never hardcode
+  repository names or root-absolute paths; derive paths from the document base so
+  the site works under any deployment folder and any static host.
+- **Manifest**: PWA manifest lives in the public assets; assets in `public/` are
+  copied into the distribution during build.
+- **Custom domain**: documented in the README (CNAME + DNS), never hardcoded.
+- **CI/CD**: `.github/workflows/pages.yml` builds and deploys the site
+  (`packages/server/build/dist`); `ci.yml` runs the test/lint/format gate. (JSR
+  publishing is deferred — see §1.)
+
+## 8. Development Workflow & Continuous Validation
+
+- **Mandatory verification** after any change: `npm run lint` (runs `deno check`)
+  and `deno task test`.
+- **Proactive unit tests**: every new function/utility/complex branch gets a
+  `@std/testing/bdd` test without being asked.
+- **Incremental delivery**: work milestone by milestone and pause for confirmation
+  before large or destructive blocks. Update `CURRENT.md` with status and next task.
+
+We are developing `@vanaware/linklist` following a planned directive. For current
+status and the next task, read `CURRENT.md`.

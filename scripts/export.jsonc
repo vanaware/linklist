@@ -1,0 +1,63 @@
+{
+  "$schema": "https://vanaware.github.io/buildit/schema/export.json",
+  "project": "linklist",
+  "modes": {
+    "core": {
+      "outputFile": "snapshots/core.md",
+      "includes": [
+        "packages/core/{src,tests,public,themes,schema}/**/*.{ts,tsx,js,css,html,json,jsonc,md,svg}",
+        "packages/core/{deno.json,deno.jsonc,README.md}"
+      ],
+      "excludes": [
+        "**/node_modules/**",
+        "**/.git/**"
+      ],
+      "includeVersion": true,
+      "customInstruction": "The text below contains the main SOURCE CODE of the @vanaware/linklist-core package.",
+      "default": true
+    },
+    "docs": {
+      "outputFile": "snapshots/docs.md",
+      "includes": [
+        "docs/**/*.{md,txt}",
+        "{README.md,LICENSE,.tool-versions,CHANGELOG.md}"
+      ],
+      "excludes": [
+        "**/node_modules/**",
+        "**/.git/**"
+      ],
+      "includeVersion": false,
+      "customInstruction": "The text below contains the project DOCUMENTATION and architectural guidelines.",
+      "default": true
+    },
+    "server": {
+      "outputFile": "snapshots/server.md",
+      "includes": [
+        "packages/server/{src,tests}/**/*.{tsx,jsx,js,ts,css,html,json,jsonc,yaml,yml,md}",
+        "packages/server/{deno.json,deno.jsonc,README.md,.env.example}"
+      ],
+      "excludes": [
+        "**/node_modules/**",
+        "**/.git/**"
+      ],
+      "includeVersion": true,
+      "customInstruction": "The text below contains the configuration and runtime files of the static @vanaware/linklist-server.",
+      "default": true
+    },
+    "utils": {
+      "outputFile": "snapshots/utils.md",
+      "includes": [
+        "{deno.json,deno.jsonc,README.md,.env.example,.tools-versions,CHANGELOG.md}",
+        "scripts/**/*.{ts,jsonc}",
+        ".github/workflows/**/*.{yaml,yml}"
+      ],
+      "excludes": [
+        "**/node_modules/**",
+        "**/.git/**"
+      ],
+      "includeVersion": true,
+      "customInstruction": "The text below contains the utility code used in the @vanaware/linklist project, such as build scripts and CI/CD configuration.",
+      "default": true
+    }
+  }
+}

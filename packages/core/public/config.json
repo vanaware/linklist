@@ -1,0 +1,64 @@
+{
+  "$schema": "https://vanaware.github.io/linklist/config.schema.json",
+  "version": "1",
+  "profile": {
+    "name": "Jane Doe",
+    "tagline": "Developer & writer",
+    "bio": "I build privacy-first tools for the open web.",
+    "avatar": "./assets/avatar.png",
+    "avatar_alt": "Portrait of Jane Doe",
+    "location": "Lisbon, PT"
+  },
+  "links": [
+    {
+      "title": "GitHub",
+      "url": "https://github.com/janedoe",
+      "icon": "github",
+      "subtitle": "Source & projects",
+      "button": true,
+      "new_tab": true
+    },
+    {
+      "title": "Blog",
+      "url": "https://janedoe.dev",
+      "icon": "website"
+    },
+    {
+      "title": "Mastodon",
+      "url": "https://mastodon.social/@janedoe",
+      "icon": "mastodon",
+      "new_tab": true,
+      "nofollow": true
+    }
+  ],
+  "theme": {
+    "preset": "minimal-dark",
+    "mode": "auto",
+    "custom": {
+      "primary_color": "#8b5cf6",
+      "radius": "12px"
+    }
+  },
+  "seo": {
+    "title": "Jane Doe — links",
+    "description": "All of Jane Doe's links in one fast, private page.",
+    "image": "./assets/og.png",
+    "url": "https://janedoe.github.io",
+    "twitter": "@janedoe",
+    "lang": "en"
+  },
+  "analytics": {
+    "provider": "none"
+  },
+  "plugins": {
+    "github_repos": ["vanaware/linklist"],
+    "show_last_updated": true
+  },
+  "sections": [
+    {
+      "title": "About",
+      "body": "I write about **privacy-first** tooling and the open web.\n\n- Deno & Preact\n- Accessibility",
+      "placement": "after"
+    }
+  ]
+}
