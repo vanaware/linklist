@@ -50,6 +50,9 @@ export { ProfileHeader, } from "./components/ProfileHeader.ts";
 
 // Static metadata builders (pure string helpers; no filesystem access).
 export {
+  presetVariable,
+  readableInk,
+  readableLink,
   resolveThemeCss,
   themeBodyClass,
   themeColor,

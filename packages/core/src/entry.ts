@@ -72,7 +72,41 @@ async function applyTheme(config: LinklistConfig,): Promise<void> {
   if (!style.parentNode) doc.head.appendChild(style,);
 }
 
+/**
+ * One-time migration cleanup: earlier builds of this site registered a
+ * `sw.js` service worker that now serves stale cached pages. The current
+ * build ships no service worker, so unregister any leftovers and drop only
+ * the caches they own before booting.
+ */
+// `ServiceWorkerRegistration.keys()` exists in browsers but is missing from
+// Deno's DOM lib; declare the tiny slice we use.
+interface RegistrationWithKeys extends ServiceWorkerRegistration {
+  readonly keys?: () => Promise<{ cacheNames: string[] }>;
+}
+
+async function purgeStaleServiceWorkers(): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map(async (registration,) => {
+        const reg = registration as RegistrationWithKeys;
+        const keys = reg.keys ? await reg.keys() : undefined;
+        const cacheNames = keys?.cacheNames ?? [];
+        await Promise.all(
+          cacheNames.map((name,) => caches.delete(name,)),
+        );
+        await reg.unregister();
+      },),
+    );
+  } catch {
+    // Best-effort; never block the first paint.
+  }
+}
+
 async function boot(): Promise<void> {
+  purgeStaleServiceWorkers();
+
   const doc = globalThis.document;
   const mount = doc?.getElementById("app",);
   if (!doc || !mount) return;

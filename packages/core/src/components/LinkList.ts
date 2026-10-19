@@ -22,10 +22,12 @@ export interface LinkRowProps {
 }
 
 export function LinkRow({ link, }: LinkRowProps,) {
+  // `is-` prefixed variants: bare `button`/`featured` would collide with
+  // BeerCSS's own `.button` component styles.
   const cls = [
     "link",
-    link.button ? "button" : "",
-    link.featured ? "featured" : "",
+    link.button ? "is-button" : "",
+    link.featured ? "is-featured" : "",
   ].filter(Boolean,).join(" ",);
 
   return html`
@@ -35,14 +37,21 @@ export function LinkRow({ link, }: LinkRowProps,) {
         target=${link.new_tab ? "_blank" : undefined}
         rel=${relFor(link,)}
       >
-        ${link.icon ? html`<${BrandIcon} name=${link.icon} />` : null}
-        <span class="link-title">${link.title}</span>
-        ${link.subtitle
-          ? html`
-            <span class="link-subtitle">
-              <${MarkdownText} text=${link.subtitle} inline=${true} />
-            </span>
-          `
+        ${link.icon
+          ? html`<span class="link-icon"><${BrandIcon} name=${link.icon} /></span>`
+          : null}
+        <span class="link-body">
+          <span class="link-title">${link.title}</span>
+          ${link.subtitle
+            ? html`
+              <span class="link-subtitle">
+                <${MarkdownText} text=${link.subtitle} inline=${true} />
+              </span>
+            `
+            : null}
+        </span>
+        ${link.new_tab
+          ? html`<i class="icon chevron" aria-hidden="true">open_in_new</i>`
           : null}
       </a>
     </li>

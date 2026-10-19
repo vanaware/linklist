@@ -141,8 +141,48 @@ next task.
   Repointed the root `README.md`, `docs/README.md` (new index entry), `docs/guide.md`
   (`cp docs/templates/…`) and the moved README's relative links. The `export.jsonc`
   `docs` mode already covers `docs/**` — no build/CI change needed.
+- ✅ **M5f** — Design polish & visual QA (pure BeerCSS). Redesigned both presets
+  (hero profile, elevated link cards with icon tiles/chevrons, gradient featured
+  variant) and namespaced every theme token as `--ll-*` so BeerCSS-owned MD3 vars
+  can never override them. A browser-preview audit then caught three real bugs,
+  all fixed: (1) BeerCSS paints `header`/`footer` with a light
+  `--surface-container` — added a `.linklist` landmark reset so profile/footer sit
+  on the page background; (2) `li.link.button` was hijacked by BeerCSS's `.button
+  component` — variant classes renamed to `is-button`/`is-featured`; (3) brand
+  names (`mastodon`, …) are not Material ligatures — `BrandIcon` now ships 13
+  inline simple-icons SVGs. Also added: `readableInk` (WCAG luminance-based
+  on-primary ink auto-derived from any custom `primary_color`), a placeholder
+  `public/assets/avatar.svg`, and a one-time stale-Service-Worker purge in
+  `entry.ts`. Verified in-browser: landmark contrast 16:1, GitHub button 6.17:1
+  (AA), equal card widths, 0 SW registrations. This also kickstarts M6 (the AA
+  checklist half); Lighthouse still to do.
+- ✅ **M5g** — Link-row width parity + responsive layout. Live measurement showed
+  the link cards (~258px) were narrower than every other block (~404px): BeerCSS
+  sets `justify-content: flex-start` on `ul`, so `.links`' implicit single `auto`
+  grid track sized to max-content instead of filling. Fixes in both presets:
+  explicit `grid-template-columns: 1fr` on `.links`, `white-space: normal` added
+  to the landmark reset (BeerCSS forces `nowrap` on `nav`), and
+  `overflow-wrap: anywhere` on titles. Responsiveness: `#app { width: 100% }` +
+  `margin-inline: auto` on `.linklist` (the shrink-wrapped flex-item mount was
+  capping the column below its `max-width`), a `max-width: 24rem` query (tighter
+  gutters, smaller avatar/name) and a `min-width: 48rem` query (44rem column,
+  2-column link grid). Verified in-browser at 360/682/900/1400: card widths ==
+  sections, no horizontal overflow, 44rem cap reached and centered.
+- ✅ **M5h** — All-theme visual audit + `--ll-link` contrast guard. Rendered and
+  audited BOTH presets in-browser (first time `light-simple` was ever rendered):
+  the preset itself is AA-clean, but the audit exposed that a config's custom
+  `primary_color` used as _text_ (section/footer links, icon tints, focus rings)
+  can fall to 2.5:1 on a light background. Added `readableLink()` (blends the
+  brand hue toward black/white in 5% steps until ≥4.5:1 vs the background) and a
+  new `--ll-link` token: presets use it for all text/icon/focus roles, with
+  `:root { --ll-link: var(--ll-primary) }` fallback; `tokensToCss` derives it
+  against `custom.background_color` or the preset's own `--ll-background`
+  (new `presetVariable()` parser in `resolveThemeCss`). Chevron opacity 0.6→0.8.
+  Approved screenshots of each theme saved to `docs/assets/screenshots/` and
+  embedded in `README.md` (Theming) and `docs/theming.md` (which also got its
+  stale pre-`--ll-*` token table and preset guidance fixed).
 - ⏭️ **M6 (next)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
-  results.
+  results (AA contrast portion already covered in M5f).
 
 ## Known environment note
 

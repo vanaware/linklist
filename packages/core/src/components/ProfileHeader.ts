@@ -40,7 +40,11 @@ export function ProfileHeader({ profile, }: ProfileHeaderProps,) {
         `
         : null}
       ${profile.location
-        ? html`<p class="location">${profile.location}</p>`
+        ? html`
+          <p class="location">
+            <i class="icon" aria-hidden="true">place</i>${profile.location}
+          </p>
+        `
         : null}
     </header>
   `;

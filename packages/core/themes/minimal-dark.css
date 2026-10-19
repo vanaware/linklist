@@ -1,156 +1,282 @@
 /*
  * Theme preset: minimal-dark
- * BeerCSS is loaded from CDN in the shell; this preset defines the bio layout
- * and the color tokens (which share names with BeerCSS / material-dynamic
- * variables so brand color flows through). Selectable via config.theme.preset.
+ * BeerCSS is loaded from CDN in the shell and provides the icon font, base
+ * semantics and interaction affordances. This preset only sets the brand color
+ * ROLE tokens (namespaced `--ll-*` so they never collide with BeerCSS's own
+ * `--surface` / `--primary`, and therefore win in every color mode) plus the
+ * bio-specific layout that BeerCSS utilities cannot express on their own.
+ * Selectable via config.theme.preset; overridden by config.theme.custom.
  */
 :root {
-  --background: #0f0f12;
-  --surface: #1a1a20;
-  --text: #e8e8ea;
-  --muted: #a0a0aa;
-  --primary: #c4b5fd;
-  --on-primary: #1e1b2e;
-  --radius: 14px;
-  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --ll-background: #0e0f13;
+  --ll-surface: #171922;
+  --ll-surface-2: #1f2230;
+  --ll-text: #eceaf4;
+  --ll-muted: #9a98ad;
+  --ll-primary: #c4b5fd;
+  --ll-on-primary: #1e1b2e;
+  /* Text-role tint of the brand color; `tokensToCss` overrides it with a
+     contrast-safe variant when config sets a custom primary_color. */
+  --ll-link: var(--ll-primary);
+  --ll-accent: #8b5cf6;
+  --ll-border: #262a38;
+  --ll-radius: 16px;
+  --ll-font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ll-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  --ll-shadow-hover: 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--background);
-  color: var(--text);
-  font-family: var(--font-family);
+  background: var(--ll-background);
+  color: var(--ll-text);
+  font-family: var(--ll-font-family);
   line-height: 1.6;
   display: flex;
   justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Neutralize BeerCSS's built-in chrome on semantic landmarks (it paints
+   `header`/`footer` with a light `--surface-container` and flex sizing). */
+.linklist header,
+.linklist footer,
+.linklist nav,
+.linklist section {
+  background: transparent;
+  display: block;
+  min-block-size: 0;
+  padding: 0;
+  margin: 0;
+  /* BeerCSS forces `white-space: nowrap` on nav; titles must wrap on small
+     screens. */
+  white-space: normal;
+}
+
+/* The Preact mount sits between the flexed `body` and our column; without
+   this it shrink-wraps to max-content and caps the page below its intended
+   `max-width`. */
+#app {
+  width: 100%;
 }
 
 .linklist {
   width: 100%;
-  max-width: 34rem;
-  padding: 2.5rem 1.25rem 3rem;
-  box-sizing: border-box;
+  max-width: 36rem;
+  margin-inline: auto;
+  padding: 2.5rem 1.25rem 3.5rem;
 }
 
-/* Profile header */
-.profile {
+/* Profile / hero */
+/* Compounded with `.linklist` so these own margins/paddings survive the
+   landmark reset above. */
+.linklist .profile {
   text-align: center;
+  padding-bottom: 0.5rem;
 }
 
 .avatar {
-  width: 6rem;
-  height: 6rem;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   display: block;
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.1rem;
   object-fit: cover;
+  border: 3px solid var(--ll-background);
+  box-shadow: var(--ll-shadow);
 }
 
 .name {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin: 0;
+  text-wrap: balance;
 }
 
 .tagline {
-  color: var(--muted);
-  margin: 0.25rem 0;
+  color: var(--ll-muted);
+  font-size: 1.05rem;
+  margin: 0.4rem auto 0;
+  max-width: 30rem;
+  text-wrap: balance;
 }
 
 .bio {
-  margin: 1rem 0;
+  margin: 1.1rem auto;
+  max-width: 30rem;
 }
 
 .bio p {
   margin: 0.5rem 0;
 }
 
+.bio p:first-child {
+  margin-top: 0;
+}
+
+.bio p:last-child {
+  margin-bottom: 0;
+}
+
+.bio a {
+  color: var(--ll-link);
+}
+
 .location {
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ll-muted);
   font-size: 0.9rem;
-  margin: 0.25rem 0;
+  margin: 0.5rem 0 0;
+}
+
+.location i.icon {
+  font-size: 1.05em;
 }
 
 /* Links */
 .links {
   list-style: none;
   padding: 0;
-  margin: 2rem 0 0;
+  margin: 1.75rem 0 0;
   display: grid;
-  gap: 0.75rem;
+  /* Explicit full-width track: BeerCSS sets `justify-content: flex-start`
+     on `ul`, which would otherwise size the implicit `auto` column to
+     max-content and leave the cards narrower than the rest of the page. */
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
 }
 
 .link a {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background: var(--surface);
-  color: var(--text);
+  gap: 0.95rem;
+  background: var(--ll-surface);
+  color: var(--ll-text);
   text-decoration: none;
-  padding: 0.9rem 1.1rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  padding: 0.85rem 1.1rem;
+  min-height: 3.5rem;
+  border: 1px solid var(--ll-border);
+  border-radius: var(--ll-radius);
+  box-shadow: var(--ll-shadow);
 }
 
-.link.featured a {
-  border: 2px solid var(--primary);
+.link.is-button a {
+  background: var(--ll-primary);
+  color: var(--ll-on-primary);
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: var(--ll-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
-.link.button a {
-  background: var(--primary);
-  color: var(--on-primary);
-  font-weight: 600;
+.link.is-featured a {
+  background: linear-gradient(135deg, var(--ll-primary), var(--ll-accent));
+  color: var(--ll-on-primary);
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: var(--ll-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.link a:hover {
+  box-shadow: var(--ll-shadow-hover);
 }
 
 .link a:hover,
 .link a:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--ll-link);
   outline-offset: 2px;
 }
 
-.link-title {
+.link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--ll-surface-2);
+  color: var(--ll-link);
+}
+
+.link.is-button .link-icon,
+.link.is-featured .link-icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+}
+
+.link-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.link-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .link-subtitle {
-  display: block;
-  color: var(--muted);
+  color: var(--ll-muted);
   font-size: 0.85rem;
   font-weight: 400;
 }
 
-.link.button .link-subtitle {
+.link.is-button .link-subtitle,
+.link.is-featured .link-subtitle {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.link .chevron {
+  flex: 0 0 auto;
+  color: var(--ll-muted);
+  opacity: 0.8;
+  font-size: 1.15rem;
+}
+
+.link.is-button .chevron,
+.link.is-featured .chevron {
   color: inherit;
   opacity: 0.85;
 }
 
 /* Icons */
 .brand-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   fill: currentColor;
-  flex: 0 0 auto;
 }
 
 i.icon {
   font-family: "Material Symbols Outlined";
   font-style: normal;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
-  flex: 0 0 auto;
 }
 
 /* Content sections */
-.section {
-  margin-top: 2rem;
+.linklist .section {
+  margin-top: 2.25rem;
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  margin: 0 0 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-muted);
+  margin: 0 0 0.75rem;
 }
 
 .section ul {
@@ -158,19 +284,57 @@ i.icon {
   margin: 0.5rem 0;
 }
 
+.section a {
+  color: var(--ll-link);
+}
+
 /* Footer */
-.footer {
-  margin-top: 2.5rem;
+.linklist .footer {
+  margin-top: 2.75rem;
   text-align: center;
-  color: var(--muted);
+  color: var(--ll-muted);
   font-size: 0.85rem;
+}
+
+.footer a {
+  color: var(--ll-link);
+}
+
+/* Responsive: tighten gutters on phones, breathe and double-column on wide
+   screens. */
+@media (max-width: 24rem) {
+  .linklist {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .avatar {
+    width: 88px;
+    height: 88px;
+  }
+
+  .name {
+    font-size: 1.45rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .linklist {
+    max-width: 44rem;
+    padding: 3.5rem 2rem 4rem;
+  }
+
+  .links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .link a {
-    transition: transform 0.12s ease;
+    transition:
+      transform 0.14s ease,
+      outline-color 0.14s ease;
   }
   .link a:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 }

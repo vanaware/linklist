@@ -5,7 +5,7 @@
     "name": "Jane Doe",
     "tagline": "Developer & writer",
     "bio": "I build privacy-first tools for the open web.",
-    "avatar": "./assets/avatar.png",
+    "avatar": "./assets/avatar.svg",
     "avatar_alt": "Portrait of Jane Doe",
     "location": "Lisbon, PT"
   },
@@ -35,7 +35,7 @@
     "preset": "minimal-dark",
     "mode": "auto",
     "custom": {
-      "primary_color": "#8b5cf6",
+      "primary_color": "#a78bfa",
       "radius": "12px"
     }
   },

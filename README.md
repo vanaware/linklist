@@ -72,10 +72,10 @@ Open the URL the server prints. (See [Building](#-build) for the sandbox fallbac
 The build is entirely driven by buildit config files — clean the output dir, copy the
 static shell + theme CSS + `config.json`, and bundle `core/src/entry.ts` → `linklist.js`:
 
-| Task | Engine | Output | Notes |
-| --- | --- | --- | --- |
-| `deno task build` | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle, used by `dev`. |
-| `deno task build:dist` | esbuild | `packages/core/dist` | Minified production bundle. |
+| Task                   | Engine                  | Output                       | Notes                                                          |
+| ---------------------- | ----------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `deno task build`      | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle, used by `dev`.                                     |
+| `deno task build:dist` | esbuild                 | `packages/core/dist`         | Minified production bundle.                                    |
 | `deno task build:deno` | Deno in-process bundler | `packages/server/build/dist` | Fallback for sandboxes where esbuild's subprocess can't spawn. |
 
 > ⚠️ **Local sandbox note**: on some locked-down containers esbuild's npm subprocess
@@ -96,8 +96,8 @@ deno task serve      # packages/server static file-server (port from packages/se
 ```jsonc
 {
   "theme": {
-    "preset": "minimal-dark",       // a CSS file from packages/core/themes
-    "mode": "auto",                 // light | dark | auto
+    "preset": "minimal-dark", // a CSS file from packages/core/themes
+    "mode": "auto", // light | dark | auto
     "custom": { "primary_color": "#6750a4", "radius": "16px" } // token overrides
   }
 }
@@ -105,6 +105,14 @@ deno task serve      # packages/server static file-server (port from packages/se
 
 Add a preset by dropping a `<name>.css` in `packages/core/themes` — it is copied into the
 build automatically.
+
+| `minimal-dark`                                                        | `light-simple`                                                        |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| ![minimal-dark theme](docs/assets/screenshots/theme-minimal-dark.png) | ![light-simple theme](docs/assets/screenshots/theme-light-simple.png) |
+
+Presets are responsive (one column on phones, a two-column card grid on desktops) and
+ship with contrast guards: a custom `primary_color` automatically derives a readable
+button ink and a AA-legible link tint per background. See [docs/theming.md](docs/theming.md).
 
 ---
 

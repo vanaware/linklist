@@ -114,8 +114,11 @@ Pure string/CSS helpers. The caller supplies the preset CSS; core never reads th
 filesystem.
 
 ```ts
-function tokensToCss(tokens?: ThemeTokens): string        // :root { … } overrides (may be "")
+function tokensToCss(tokens?: ThemeTokens, fallbackBackground?: string): string  // :root { … } overrides (may be "")
 function resolveThemeCss(theme: ThemeConfig, presetCss: string): string
+function readableInk(background: string, darkInk?: string, lightInk?: string): string
+function readableLink(color: string, background: string, min?: number): string
+function presetVariable(presetCss: string, property: string): string | undefined
 function themeBodyClass(theme?: ThemeConfig): string      // "auto" | "light" | "dark"
 function themeColor(theme?: ThemeConfig): string          // theme-color meta (default "#6750a4")
 ```
