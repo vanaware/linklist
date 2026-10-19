@@ -81,7 +81,7 @@ export function readableInk(
   if (!bg || !dark || !light) return darkInk;
   const bgLum = luminance(bg,);
   return contrastRatio(bgLum, luminance(dark,),) >=
-    contrastRatio(bgLum, luminance(light,),)
+      contrastRatio(bgLum, luminance(light,),)
     ? darkInk
     : lightInk;
 }
@@ -101,8 +101,9 @@ function blend(
 
 /** Format an RGB triple back into a `#rrggbb` hex string. */
 function rgbToHex(rgb: [number, number, number,],): string {
-  return `#${rgb.map((v,) => Math.round(v,).toString(16,).padStart(2, "0",)).join("",)
-    }`;
+  return `#${
+    rgb.map((v,) => Math.round(v,).toString(16,).padStart(2, "0",)).join("",)
+  }`;
 }
 
 /**

@@ -15,20 +15,27 @@ customize a stock page.
 }
 ```
 
-The bundled presets are:
+The bundled presets — pick one as `theme.preset`:
 
-| Preset | Feel |
-| --- | --- |
-| `minimal-dark` | Dark, high-contrast, calm surfaces. |
-| `light-simple` | Light, neutral, generous whitespace. |
+| Preset | Feel / when to choose it | Preview |
+| --- | --- | --- |
+| `minimal-dark` | Dark, high-contrast, calm surfaces. Choose it for night-friendly brands and vivid accent colors. | ![minimal-dark theme](assets/screenshots/theme-minimal-dark.png) |
+| `light-simple` | Light, neutral, generous whitespace. Choose it for print-like, editorial or corporate pages. | ![light-simple theme](assets/screenshots/theme-light-simple.png) |
 
-| minimal-dark | light-simple |
-| --- | --- |
-| ![minimal-dark theme](assets/screenshots/theme-minimal-dark.png) | ![light-simple theme](assets/screenshots/theme-light-simple.png) |
+How to choose:
 
-Both presets are responsive: a single centered column on phones and tablet
-widths, and on desktops (≥ 48rem) a wider column with the link cards flowing
-in a two-column grid.
+- **They differ only in palette.** Layout, components, responsive behavior (single
+  column on phones, two-column cards ≥ 48rem) and the WCAG AA contrast guards are
+  shared, so pick by look, not by capability.
+- **Switching needs no rebuild.** The browser fetches `./<preset>.css` and
+  `./config.json` at runtime: edit `theme.preset`, save, reload — done.
+- **`mode` is a hint, not the theme.** The preset decides the page colors; `mode`
+  only sets the `<body>` class BeerCSS uses for its own controls plus browser UI
+  (scrollbars, form widgets). Set it to match the preset's lightness
+  (`light-simple` → `"light"`, `minimal-dark` → `"dark"`) or leave `"auto"`.
+- **Not listed? It is a file away.** Any `<name>.css` dropped into
+  `packages/core/themes` becomes selectable as `"<name>"` — see
+  [Adding a new preset](#adding-a-new-preset).
 
 At runtime the browser entry (`packages/core/src/entry.ts`) applies the theme:
 
