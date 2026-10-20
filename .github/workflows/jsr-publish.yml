@@ -61,8 +61,8 @@ jobs:
 
       - name: Dry-run publish
         working-directory: packages/core
-        run: deno publish --dry-run --allow-slow-types
+        run: deno publish --dry-run --allow-slow-types --allow-dirty
 
       - name: Publish @vanaware/linklist to JSR
         working-directory: packages/core
-        run: deno publish --allow-slow-types
+        run: deno publish --allow-slow-types --allow-dirty
