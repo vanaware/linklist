@@ -1,6 +1,6 @@
 {
-  "name": "mdBlog",
-  "description": "Browser Blog engine from markdown",
+  "name": "linklist",
+  "description": "Link-in-bio static site generator powered by Preact and BeerCSS",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
