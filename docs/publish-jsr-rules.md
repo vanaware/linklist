@@ -2,13 +2,13 @@
 
 > **Status: publishing is currently deferred.** Both workspace packages are set to
 > `"publish": false`, and the automated `.github/workflows/jsr-publish.yml` has been
-> **removed**. `@vanaware/linklist-core` is consumed from source in the monorepo. This
+> **removed**. `@vanaware/linklist` is consumed from source in the monorepo. This
 > document describes the rules to follow **when** library publication is re-enabled. Do not
 > add a publish workflow until these are satisfied.
 
 ## Which packages are libraries
 
-- `@vanaware/linklist-core` (`packages/core`) — the engine: schema, validator, render
+- `@vanaware/linklist` (`packages/core`) — the engine: schema, validator, render
   runtime, theme/markdown/SEO/plugin helpers, the built-in plugins and the CSS theme
   presets (all folded into core). This is the **only** JSR publication candidate.
 - `@vanaware/linklist-server` (`packages/server`) — a local static file-server used for
@@ -35,7 +35,7 @@ publishing by design — and re-add a publish workflow gated on the package bein
 3. **Runnable README** at the package root with an executable import example, e.g.:
 
    ```ts
-   import { parseAndValidate } from "@vanaware/linklist-core";
+   import { parseAndValidate } from "@vanaware/linklist";
    const r = parseAndValidate(Deno.readTextFileSync("packages/core/public/config.json"));
    ```
 
@@ -45,7 +45,7 @@ publishing by design — and re-add a publish workflow gated on the package bein
    [API reference](api-reference.md)) is exported.
 5. **Semver discipline**: bump the package `version` on change; the build tooling
    (`versionPaths` in `scripts/*.jsonc`) keeps `version.ts` stamps in sync. Do not hand-edit
-   `CORE_VERSION`/`PLUGINS_VERSION` — they are stamped at build.
+   `src/version.ts` / its `APP_VERSION` — they are stamped at build.
 
 ## Release checklist (when enabled)
 

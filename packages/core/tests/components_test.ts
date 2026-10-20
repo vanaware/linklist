@@ -2,7 +2,7 @@ import { assertEquals, assertStringIncludes, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
 import { renderToString, } from "preact-render-to-string";
 import { App, } from "../src/components/App.ts";
-import type { LinklistConfig, } from "../src/types.ts";
+import type { LinklistConfig, } from "../src/lib/types.ts";
 
 const config: LinklistConfig = {
   profile: {

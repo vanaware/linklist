@@ -1,5 +1,5 @@
 /**
- * @file plugin.ts
+ * @file engine.ts
  * @description Plugin contract and orchestration. Plugins run where the host
  * puts them: at build time for the SaaS tier, or in the browser for the static
  * site. Either way they fetch remote data through an **injected** `fetchJson`
@@ -9,7 +9,11 @@
  * Because the network and filesystem stay on the caller's side, this module is
  * reusable by the SaaS tier.
  */
-import type { ContentSection, LinkItem, LinklistConfig, } from "./types.ts";
+import type {
+  ContentSection,
+  LinkItem,
+  LinklistConfig,
+} from "../lib/types.ts";
 
 /** What a plugin contributes to the page. Both are appended, never replacing. */
 export interface PluginOutput {

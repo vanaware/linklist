@@ -8,7 +8,7 @@
  * Validation is pure: it takes an in-memory object (or raw JSON text) and
  * returns structured results with friendly, path-pointed error messages. No
  * filesystem or network access happens here — reading `config.json` lives in
- * the browser entry (`entry.ts`) and the `scripts/validate.ts` tooling edge.
+ * the browser entry (`entry.ts`) and the `cli.ts` tooling edge.
  */
 
 import { type, } from "arktype";
@@ -201,7 +201,7 @@ function semanticErrors(data: LinklistConfig,): string[] {
  * failure a list of friendly `errors`.
  * @example
  * ```ts
- * import { validateConfig } from "@vanaware/linklist-core";
+ * import { validateConfig } from "@vanaware/linklist";
  * const result = validateConfig({
  *   profile: { name: "Jane" },
  *   links: [{ title: "Site", url: "https://jane.dev" }],

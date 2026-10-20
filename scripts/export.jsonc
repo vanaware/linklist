@@ -13,7 +13,7 @@
         "**/.git/**"
       ],
       "includeVersion": true,
-      "customInstruction": "The text below contains the main SOURCE CODE of the @vanaware/linklist-core package.",
+      "customInstruction": "The text below contains the main SOURCE CODE of the @vanaware/linklist package.",
       "default": true
     },
     "docs": {

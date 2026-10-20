@@ -6,7 +6,7 @@
  */
 import { assertEquals, assertStringIncludes, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
-import { mergePluginOutputs, runPlugins, } from "../src/plugin.ts";
+import { mergePluginOutputs, runPlugins, } from "../src/plugins/engine.ts";
 import type {
   LinklistConfig,
   LinklistPlugin,

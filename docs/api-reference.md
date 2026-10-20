@@ -1,15 +1,30 @@
-# API reference — `@vanaware/linklist-core`
+# API reference — `@vanaware/linklist`
 
-The public surface is re-exported from `packages/core/src/mod.ts`. Core is **pure**: it
-performs no filesystem or network access and touches the DOM only when you call the
-explicitly browser-aware helpers (`applyHead`, the render runtime). The one DOM-aware
-module is the **browser entry** (`entry.ts`), which is *not* exported from `mod.ts` — it is
-the bundled application bootstrap.
+The public surface is re-exported from `packages/core/src/mod.ts`. Core is **pure**: the
+engine (`lib/` + `components/`) performs no filesystem or network access — it returns
+types, strings and VNodes. Side effects live only at two edges: the **browser entry**
+(`entry.ts`, bundled into `linklist.js`, *not* exported) and the **CLI** (`cli.ts`,
+exported as command objects that never run on import).
+
+### Why `mod.ts` and the bundled `linklist.js` are two surfaces
+
+`index.html` loads exactly one script, `./linklist.js` — the bundle of `entry.ts`. It
+boots itself on import (fetch → validate → plugins → theme → render), so it
+cannot be a library export: importing it would run all of that. `mod.ts` is the
+opposite contract — the same engine with **zero import-time side effects**, for
+embedding in your own tooling or the future SaaS tier:
+
+| | `entry.ts` → `linklist.js` | `mod.ts` → `@vanaware/linklist` |
+| --- | --- | --- |
+| Loaded by | `index.html` (the static site) | your code (`import` / JSR) |
+| Side effects on import | starts the app | none |
+| I/O | fetches `./config.json`, presets | caller supplies everything |
+| Use when | you host the ready-made page | you drive rendering yourself |
 
 Import everything from the package root:
 
 ```ts
-import { validateConfig, renderMarkdown, App } from "@vanaware/linklist-core";
+import { validateConfig, renderMarkdown, App } from "@vanaware/linklist";
 ```
 
 ---
@@ -24,11 +39,10 @@ Described in full in the [Configuration reference](configuration.md).
 | `Profile`, `LinkItem`, `ContentSection` | Identity, links, Markdown blocks. |
 | `ThemeConfig`, `ThemeTokens` | Appearance. |
 | `SeoConfig`, `AnalyticsConfig`, `PluginsConfig` | Metadata, analytics, plugins. |
-| `IO` | Reactive I/O seam (`readText`, optional `readBytes`). |
 
 ---
 
-## Validation (`schema.ts`)
+## Validation (`lib/schema.ts`)
 
 Built on ArkType plus semantic cross-field checks. Pure — no I/O.
 
@@ -55,7 +69,7 @@ else render(result.data);
 
 ---
 
-## Markdown (`markdown.ts`)
+## Markdown (`components/markdown.ts`)
 
 CommonMark + GFM (tables, strikethrough, task lists) rendered straight to Preact VNodes.
 Raw HTML is dropped, so output is XSS-safe. Used for `bio`, `tagline`, section bodies,
@@ -68,7 +82,7 @@ function renderInlineMarkdown(markdown: string): ComponentChildren  // inline on
 
 ---
 
-## Reactive state (`state.ts`)
+## Reactive state (`components/state.ts`)
 
 Central store on `@preact/signals` (the project forbids `useState`/`useEffect` for global
 state).
@@ -101,14 +115,14 @@ signals above (or explicit props where noted).
 
 ```ts
 import { h, render } from "preact";
-import { App, setConfig } from "@vanaware/linklist-core";
+import { App, setConfig } from "@vanaware/linklist";
 setConfig(validConfig);                     // optional: also drives the signals
 render(h(App, { config: validConfig }), document.getElementById("app"));
 ```
 
 ---
 
-## Theme (`theme.ts`)
+## Theme (`lib/theme.ts`)
 
 Pure string/CSS helpers. The caller supplies the preset CSS; core never reads the
 filesystem.
@@ -125,10 +139,11 @@ function themeColor(theme?: ThemeConfig): string          // theme-color meta (d
 
 ---
 
-## SEO metadata (`seo.ts`)
+## SEO metadata builders (`lib/seo.ts`)
 
-Pure builders returning strings; the entry (`head.ts`) applies them to the live DOM. The
-SaaS tier reuses them verbatim.
+Pure functions returning strings — no DOM, no filesystem. The generated head is baked
+into `index.html` at build time (see `generate.ts`), so crawlers and link-preview
+scrapers read it without JavaScript. The SaaS tier reuses these verbatim.
 
 ```ts
 function buildHead(config: LinklistConfig, opts?: { baseUrl?: string }): string  // <title>+meta+link+JSON-LD
@@ -140,19 +155,39 @@ function safeJson(value: unknown): string                                       
 
 ---
 
-## Runtime head injection (`head.ts`)
+## Static site generation (`lib/generate.ts`)
 
-Browser DOM, but safe to import in non-DOM environments (it only touches `document` when
-`applyHead` runs).
+Turn a validated config into the full text of the publishable files. Pure — the CLI
+writes these outputs; a future server can stream them. The HTML shell is embedded in
+code (no template file).
 
 ```ts
-function headFragment(config: LinklistConfig): string                 // == buildHead(config)
-function applyHead(config: LinklistConfig, doc?: Document): void     // idempotent; tags nodes data-ll-head
+interface GeneratedFile { name: string; content: string }
+
+function renderIndexHtml(config, opts?: { baseUrl?: string }): string   // complete index.html (head baked in, no-JS fallback)
+function renderManifest(config): string                                 // PWA manifest; icons reference profile.avatar
+function renderRobotsTxt(config, opts?: { baseUrl?: string }): string   // allow-all crawler policy
+function generateSite(config, opts?: { baseUrl?: string }): GeneratedFile[]  // the three files
 ```
 
 ---
 
-## Plugins (`plugin.ts`)
+## CLI (`cli.ts`)
+
+A Cliffy program (`linklistCommand`) with `build` and `validate` subcommands, exported
+as command objects — importing never runs them. `build` writes `generateSite` output into
+the public folder (defaults `--config packages/core/public/config.json`,
+`--out packages/core/public`); `validate` replaces the former `scripts/validate.ts`.
+Drive them with `deno task linklist:build` and `deno task validate-config <path>`.
+
+```ts
+async function buildSiteFiles(config, outDir: string, opts?: { baseUrl?: string }): Promise<string[]>
+const linklistCommand: Command   // .command("build") + .command("validate [path]")
+```
+
+---
+
+## Plugins (`plugins/engine.ts`)
 
 The contract and orchestration. Full walkthrough in [Plugins](plugins.md).
 
@@ -166,16 +201,16 @@ function mergePluginOutputs(config: LinklistConfig, outputs: PluginOutput[]): Li
 ```
 
 Core also ships its default plugins: `builtinPlugins` (the list core runs) and
-`githubReposPlugin` are exported from `@vanaware/linklist-core` (from `plugins/mod.ts`).
+`githubReposPlugin` are exported from `@vanaware/linklist` (from `plugins/mod.ts`).
 There is no separate plugins package.
 
 ---
 
 ## Version
 
-```ts
-export const CORE_VERSION = "0.1.0";   // kept in sync with the workspace by the build tooling
-```
+The version is not exported from `mod.ts`: `src/version.ts` is generated and
+stamped (`__APP_VERSION__`) by the buildit scripts on every build, and consumed
+by the `Footer` component as `APP_VERSION`. Treat it as build metadata, not API.
 
 ---
 
@@ -184,6 +219,6 @@ export const CORE_VERSION = "0.1.0";   // kept in sync with the workspace by the
 Not part of `mod.ts`. This is the bundle's `main`: it fetches `./config.json` (relative, so
 it works under any base path), runs `parseAndValidate`, feeds failures to an error view,
 otherwise installs the config with `setConfig`, runs the built-in plugins, merges their
-output, calls `applyHead`, applies the theme (body class + preset CSS + `theme.custom`
-tokens), and renders `<App/>`. Nothing is
-pre-rendered and the config is never embedded — this is pure client render.
+output, applies the theme (body class + preset CSS + `theme.custom` tokens), and renders
+`<App/>`. The `<head>` is NOT touched here — it is finalized into `index.html` at build
+time. The body is client-rendered and the config is never embedded.

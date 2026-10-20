@@ -1,7 +1,13 @@
 import { assertEquals, assertStringIncludes, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
-import { buildHead, buildJsonLd, escapeHtml, safeJson, } from "../src/seo.ts";
-import type { LinklistConfig, } from "../src/types.ts";
+import {
+  buildHead,
+  buildJsonLd,
+  escapeHtml,
+  faviconDataUri,
+  safeJson,
+} from "../src/lib/seo.ts";
+import type { LinklistConfig, } from "../src/lib/types.ts";
 
 const config: LinklistConfig = {
   profile: { name: "Jane Doe", tagline: "Maker", },
@@ -48,5 +54,13 @@ describe("buildHead", () => {
   it("includes twitter handle and JSON-LD", () => {
     assertStringIncludes(head, 'name="twitter:site" content="@janedoe"',);
     assertStringIncludes(head, "application/ld+json",);
+  });
+});
+
+describe("faviconDataUri", () => {
+  it("builds an inline SVG data-URI from the initial", () => {
+    const uri = faviconDataUri("Jane", "#2200aa",);
+    assertStringIncludes(uri, "data:image/svg+xml,",);
+    assertStringIncludes(decodeURIComponent(uri.split(",",)[1] ?? "",), "J",);
   });
 });

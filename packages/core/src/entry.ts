@@ -3,19 +3,21 @@
  * @description Browser entry point, bundled by buildit into `dist/linklist.js`.
  * It fetches `./config.json` from the static folder at runtime (resolved
  * relative to the document, so it works at a domain root OR under a subfolder),
- * validates it, runs the built-in plugins, injects the per-config SEO head,
- * applies the theme, and renders the full Preact `App` into `#app`. This file is
- * intentionally NOT exported from `mod.ts` so non-browser code never pulls in DOM APIs.
+ * validates it, runs the built-in plugins, applies the theme, and renders the
+ * full Preact `App` into `#app`. The document <head> metadata is NOT touched
+ * here: it is finalized into `index.html` at build time (before publishing to
+ * the static host), so crawlers and link-preview scrapers see it without JS.
+ * This file is intentionally NOT exported from `mod.ts` so non-browser code
+ * never pulls in DOM APIs.
  */
 import { h, render, } from "preact";
 import { App, } from "./components/App.ts";
-import { applyHead, } from "./head.ts";
-import { mergePluginOutputs, runPlugins, } from "./plugin.ts";
+import { mergePluginOutputs, runPlugins, } from "./plugins/engine.ts";
 import { builtinPlugins, } from "./plugins/mod.ts";
-import { parseAndValidate, } from "./schema.ts";
-import { setConfig, } from "./state.ts";
-import { resolveThemeCss, themeBodyClass, } from "./theme.ts";
-import type { LinklistConfig, } from "./types.ts";
+import { parseAndValidate, } from "./lib/schema.ts";
+import { setConfig, } from "./components/state.ts";
+import { resolveThemeCss, themeBodyClass, } from "./lib/theme.ts";
+import type { LinklistConfig, } from "./lib/types.ts";
 
 /** Resolve `path` next to the current document (root- and subfolder-safe). */
 function relative(path: string,): string {
@@ -140,7 +142,6 @@ async function boot(): Promise<void> {
   const config = mergePluginOutputs(base, outputs,);
 
   setConfig(config,);
-  applyHead(config,);
   await applyTheme(config,);
   render(h(App, { config, },), mount,);
 }

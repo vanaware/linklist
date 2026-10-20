@@ -6,16 +6,8 @@
  * SaaS tier without any translation layer.
  *
  * This module is intentionally dependency-free and side-effect-free: it only
- * declares types. Runtime validation lives in `schema.ts` (M1).
+ * declares types. Runtime validation lives in `lib/schema.ts`.
  */
-
-/** Reactive I/O seam so `core` never touches the filesystem or network directly. */
-export interface IO {
-  /** Read a text file/resource by path or URL. */
-  readText(path: string,): Promise<string>;
-  /** Optional binary read, used when copying assets. */
-  readBytes?(path: string,): Promise<Uint8Array>;
-}
 
 /** Identity block rendered at the top of the page. */
 export interface Profile {

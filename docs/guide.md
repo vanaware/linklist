@@ -57,14 +57,15 @@ deno task validate-config site/config.json
 deno task dev
 ```
 
-This runs `build` (bundle the app + copy the static shell, theme CSS and your
-`config.json` into `packages/server/build/dist`) and then serves that folder. Open the
-printed URL. The page renders in the browser from `config.json`, so edits to the config
-show up on reload.
+This runs `denobuild` (the `linklist:build` codegen writes `index.html`,
+`manifest.json` and `robots.txt`, then the app is bundled and the static assets, theme
+CSS and your `config.json` are copied into `packages/server/build/dist`) and then serves
+that folder. Open the printed URL. The body renders in the browser from `config.json`,
+so edits to the config show up on reload.
 
 > **Sandbox note**: on some locked-down containers the esbuild subprocess cannot start.
-> If `deno task build` fails with `ChildProcess.unref`, use the in-process fallback:
-> `deno task build:deno` then `deno task serve`. CI runners build with esbuild normally.
+> If `deno task esbuild` fails with `ChildProcess.unref`, use the in-process fallback:
+> `deno task denobuild` then `deno task dev`. CI runners build with esbuild normally.
 
 ## 6. Add rich text
 
@@ -96,9 +97,13 @@ scripts at runtime.
 ## 8. Build for production
 
 ```bash
-deno task build        # esbuild, dev bundle → packages/server/build/dist
-deno task build:dist   # esbuild, minified → packages/core/dist
+deno task esbuild     # esbuild engine    → packages/server/build/dist
+deno task denobuild   # Deno in-process   → packages/server/build/dist
 ```
+
+Both first run `deno task linklist:build`, which generates `index.html`,
+`manifest.json` and `robots.txt` (with the SEO `<head>` baked in) into
+`packages/core/public` for the bundler to copy.
 
 The output in `packages/server/build/dist` is fully self-contained and uses relative
 paths, so it works at a domain root **or** under a project-page subfolder.

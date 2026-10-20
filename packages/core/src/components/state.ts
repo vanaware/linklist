@@ -6,7 +6,7 @@
  * needs are derived with `computed`.
  */
 import { computed, signal, } from "@preact/signals";
-import type { LinkItem, LinklistConfig, } from "./types.ts";
+import type { LinkItem, LinklistConfig, } from "../lib/types.ts";
 
 // Re-export the reactive primitives so apps import them from core.
 export { computed, signal, } from "@preact/signals";

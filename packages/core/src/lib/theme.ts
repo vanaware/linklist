@@ -65,7 +65,7 @@ function contrastRatio(a: number, b: number,): number {
  * @returns Either `darkInk` or `lightInk`.
  * @example
  * ```ts
- * import { readableInk } from "@vanaware/linklist-core";
+ * import { readableInk } from "@vanaware/linklist";
  * readableInk("#c4b5fd"); // "#1e1b2e" (light fill -> dark ink)
  * readableInk("#171922"); // "#ffffff" (dark fill -> light ink)
  * ```
@@ -120,7 +120,7 @@ function rgbToHex(rgb: [number, number, number,],): string {
  * @returns A hex color (possibly the input unchanged).
  * @example
  * ```ts
- * import { readableLink } from "@vanaware/linklist-core";
+ * import { readableLink } from "@vanaware/linklist";
  * readableLink("#a78bfa", "#f5f6fb"); // darkened toward black, >= 4.5:1
  * readableLink("#4f46e5", "#0e0f13"); // already readable -> returned as-is
  * ```
@@ -161,7 +161,7 @@ export function readableLink(
  * @returns A CSS string (possibly empty).
  * @example
  * ```ts
- * import { tokensToCss } from "@vanaware/linklist-core";
+ * import { tokensToCss } from "@vanaware/linklist";
  * tokensToCss({ primary_color: "#ff0066", radius: "18px" });
  * ```
  */

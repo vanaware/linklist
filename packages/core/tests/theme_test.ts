@@ -13,7 +13,7 @@ import {
   themeBodyClass,
   themeColor,
   tokensToCss,
-} from "../src/theme.ts";
+} from "../src/lib/theme.ts";
 
 describe("tokensToCss", () => {
   it("returns empty string when there are no tokens", () => {

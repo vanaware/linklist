@@ -1,5 +1,5 @@
 {
-  "name": "@vanaware/linklist-server",
+  "name": "@vanaware/server",
   "description": "Local static file-server used to preview and test the built linklist site. Development aid only — never published.",
   "publish": false,
   "compilerOptions": {

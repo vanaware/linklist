@@ -5,7 +5,7 @@
  * for block content (bio, section body).
  */
 import type { ComponentChildren, } from "preact";
-import { renderInlineMarkdown, renderMarkdown, } from "../markdown.ts";
+import { renderInlineMarkdown, renderMarkdown, } from "./markdown.ts";
 
 export interface MarkdownTextProps {
   text: string;

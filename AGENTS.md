@@ -24,7 +24,7 @@ commit messages are written in **English**. No exceptions.
   `jsr:` and `npm:` specifiers. `npm:` specifiers are resolved by Deno and do NOT
   create a local `node_modules` — they are allowed (e.g. `npm:arktype`).
 - **Validation**: config is validated with **ArkType** (type-first, via `npm:`).
-- **JSR Publication (deferred)**: only `@vanaware/linklist-core` is ever a publication
+- **JSR Publication (deferred)**: only `@vanaware/linklist` is ever a publication
   candidate; `@vanaware/linklist-server` is a dev-only static server and must stay
   `publish: false` permanently. The packages are currently `publish: false` and the
   `jsr-publish.yml` workflow has been removed. When core is ready to publish, keep
@@ -43,7 +43,7 @@ commit messages are written in **English**. No exceptions.
   state module. The few allowed `useEffect` calls are for post-commit DOM work only.
 - **Components**: keep UI modularized in `packages/core/src/components/`. There are no
   islands / `hydrateIslands()` — the page is a single client-rendered Preact tree.
-- **Everything in core**: the theme engine (`core/src/theme.ts`), the plugin engine
+- **Everything in core**: the theme engine (`core/src/lib/theme.ts`), the plugin engine
   (`core/src/plugin.ts`) and the built-in plugins (`core/src/plugins/`) all live in
   `packages/core`, alongside the CSS presets in `packages/core/themes`. There is no
   separate themes or plugins package, and no runtime third-party `theme.script` /
@@ -74,14 +74,16 @@ commit messages are written in **English**. No exceptions.
   correct ARIA, keyboard order, `alt` required for avatars, real `<a>` links.
 - **Privacy off-by-default**: analytics / click counting are DISABLED unless the
   config explicitly enables them. No user tracking.
-- **Static, portable output**: `deno task build` emits a self-contained site under
-  `dist/` (`index.html`, assets, favicon, `manifest.json`, `sitemap.xml`,
-  `robots.txt`, OG/Twitter/JSON-LD head).
-- **Progressive enhancement (revised)**: the model is pure client render — the served
-  `index.html` is a shell with a `<noscript>` notice, and `linklist.js` renders the page
-  and applies the SEO head at runtime. Google executes JS, but no-JS scrapers see only
-  the shell. If pre-rendered/SSG output is later required for SEO or no-JS, add it as an
-  explicit build step rather than assuming the shell has content.
+- **Static, portable output**: the build (`deno task esbuild` / `denobuild`) emits a
+  self-contained site under `dist/` (`index.html` with a finalized SEO head, theme CSS,
+  assets, favicon, `manifest.json`, `robots.txt`, `linklist.js`).
+- **Progressive enhancement (static head + client body)**: the document `<head>`
+  (title, OG, Twitter, JSON-LD, theme-color, favicon) and the PWA `manifest.json` are
+  baked into `index.html` at BUILD time by `packages/core/src/cli.ts build` (task
+  `linklist:build`), using the pure builders in `lib/seo.ts` + `lib/generate.ts` — so
+  crawlers and no-JS link-preview scrapers read real metadata. `linklist.js` then
+  hydrates the page body (theme, plugins, Preact) at runtime. There is NO runtime DOM
+  head-injection (`applyHead` was removed); the served shell already carries the head.
 
 ## 5. Testing Standard
 

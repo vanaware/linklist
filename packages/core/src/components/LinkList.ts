@@ -5,7 +5,7 @@
  * handling for `new_tab` and `nofollow`.
  */
 import { html, } from "htm/preact";
-import type { LinkItem, } from "../types.ts";
+import type { LinkItem, } from "../lib/types.ts";
 import { BrandIcon, } from "./BrandIcon.ts";
 import { MarkdownText, } from "./MarkdownText.ts";
 

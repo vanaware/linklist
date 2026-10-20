@@ -1,7 +1,10 @@
 import { assertEquals, assertStringIncludes, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
 import { renderToString, } from "preact-render-to-string";
-import { renderInlineMarkdown, renderMarkdown, } from "../src/markdown.ts";
+import {
+  renderInlineMarkdown,
+  renderMarkdown,
+} from "../src/components/markdown.ts";
 
 // The renderer returns Preact children; render-to-string gives us a stable HTML
 // snapshot to assert against without needing a DOM.

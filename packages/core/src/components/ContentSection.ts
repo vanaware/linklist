@@ -4,7 +4,7 @@
  * list (the "about" / custom sections feature).
  */
 import { html, } from "htm/preact";
-import type { ContentSection as Section, } from "../types.ts";
+import type { ContentSection as Section, } from "../lib/types.ts";
 import { MarkdownText, } from "./MarkdownText.ts";
 
 export interface ContentSectionProps {

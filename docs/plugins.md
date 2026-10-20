@@ -11,7 +11,7 @@ plugin reusable in the browser, at build time, and in tests (with a mocked fetch
 
 ## The contract
 
-From `@vanaware/linklist-core`:
+From `@vanaware/linklist`:
 
 ```ts
 interface LinklistPlugin {
@@ -67,7 +67,7 @@ Behavior notes:
 - Any failure is isolated: the section is skipped and the rest of the page renders.
 
 The built-in plugins live in core (`builtinPlugins` in `packages/core/src/plugins/mod.ts`,
-re-exported from `@vanaware/linklist-core`). To add a first-party plugin, implement
+re-exported from `@vanaware/linklist`). To add a first-party plugin, implement
 `LinklistPlugin`, drop it under `packages/core/src/plugins/`, export it, and append it to
 `builtinPlugins`.
 

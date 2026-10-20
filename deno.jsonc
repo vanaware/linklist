@@ -1,5 +1,5 @@
 {
-  "version": "0.1.16#mvef2odr",
+  "version": "0.1.19#mvftz59i",
   "description": "Link-in-bio static site generator (config.json -> static HTML).",
   "license": "MIT",
   "author": "Vanaware",
@@ -31,6 +31,7 @@
     ".vscode/",
     ".github/",
     "packages/server/build/",
+    "packages/core/dist/",
     "vendor",
     "node_modules",
     "snapshots",
@@ -46,8 +47,7 @@
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.6",
     "@std/testing": "jsr:@std/testing@^1.0.20",
-    "@vanaware/buildit": "jsr:@vanaware/buildit@^0.5.2",
-    "@vanaware/linklist-core": "./packages/core/src/mod.ts"
+    "@vanaware/buildit": "jsr:@vanaware/buildit@^0.5.2"
   },
   "tasks": {
     "test": "deno test --no-check -P",
@@ -57,16 +57,13 @@
     "fmt:check": "deno fmt --check",
     "lint:fix": "deno lint --fix",
     "tests": "deno task check:all && deno task lint && deno task fmt:check && deno task test",
-    "dev": "deno task build && deno task --cwd packages/server dev",
-    "serve": "deno task --cwd packages/server dev",
-    "validate-config": "deno run -A scripts/validate.ts",
-    "build": "deno run --allow-read --allow-write --allow-run scripts/esbuild.ts -n linklist",
-    "build:deno": "deno run -A scripts/denobuild.ts -n linklist",
-    "build:dist": "deno run -A scripts/esbuild.ts linklist-dist",
+    "dev": "deno task denobuild && deno task --cwd packages/server dev",
+    "validate-config": "deno run -A packages/core/src/cli.ts validate",
     "start": "deno task --cwd packages/server start",
     "export": "deno run --allow-env --allow-read --allow-write ./scripts/export.ts",
-    "esbuild": "deno run --allow-env --allow-run --allow-read --allow-write ./scripts/esbuild.ts",
-    "denobuild": "deno run --unstable-bundle -A ./scripts/denobuild.ts",
+    "linklist:build": "deno run -A packages/core/src/cli.ts build",
+    "esbuild": "deno task linklist:build && deno run --allow-env --allow-run --allow-read --allow-write ./scripts/esbuild.ts",
+    "denobuild": "deno task linklist:build && deno run --unstable-bundle -A ./scripts/denobuild.ts",
     "watch": "deno run -A ./scripts/watch.ts",
     "sanitize-version": "deno run -A ./scripts/sanitize-version.ts",
     "tag-version": "deno run -A ./scripts/tag-version.ts",
@@ -130,7 +127,9 @@
       "packages/**/tests/**/*test.ts"
     ],
     "exclude": [
-      "packages/server/build/"
+      "packages/server/build/",
+      "packages/core/public/index.html",
+      "packages/core/public/manifest.json"
     ]
   }
 }

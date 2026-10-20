@@ -44,6 +44,29 @@
       "banner": {
         "js": "/*!\n * linklist v__APP_VERSION__ [DEV]\n * (c) 2026 Vanaware - MIT License\n */\n"
       }
+    },
+    "dist": {
+      "default": true,
+      "srcdir": "packages/core/src",
+      "distdir": "packages/core/dist",
+      "clean": [
+        "*"
+      ],
+      "entryPoints": [
+        "entry.ts"
+      ],
+      "outfile": "linklist.min.js",
+      "platform": "browser",
+      "format": "esm",
+      "minify": true,
+      "sourcemap": "linked",
+      "keepNames": true,
+      "codeSplitting": false,
+      "packages": "bundle",
+      "inlineImports": true,
+      "banner": {
+        "js": "/*!\n * linklist v__APP_VERSION__ [DEV]\n * (c) 2026 Vanaware - MIT License\n */\n"
+      }
     }
   }
 }

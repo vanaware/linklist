@@ -9,13 +9,13 @@ configuration**.
 ## Build first
 
 ```bash
-deno task build        # esbuild  → packages/server/build/dist  (dev bundle)
-deno task build:dist   # esbuild  → packages/core/dist          (minified prod bundle)
+deno task esbuild     # esbuild engine  → packages/server/build/dist
 ```
 
 > Locked-down containers where the esbuild subprocess can't start: use
-> `deno task build:deno` (Deno's in-process bundler) to produce the same
-> `packages/server/build/dist` output. CI uses esbuild normally.
+> `deno task denobuild` (Deno's in-process bundler) to produce the same
+> `packages/server/build/dist` output. CI uses esbuild normally. Both first run
+> `deno task linklist:build` to bake `index.html`, `manifest.json` and `robots.txt`.
 
 ## GitHub Pages (automated)
 
@@ -45,9 +45,9 @@ Build locally (or in the host's CI) and upload the `dist` folder.
 
 | Host | Build command | Output / publish directory |
 | --- | --- | --- |
-| Netlify | `deno task build` | `packages/server/build/dist` |
-| Cloudflare Pages | `deno task build` | `packages/server/build/dist` |
-| Vercel | `deno task build` | `packages/server/build/dist` |
+| Netlify | `deno task esbuild` | `packages/server/build/dist` |
+| Cloudflare Pages | `deno task esbuild` | `packages/server/build/dist` |
+| Vercel | `deno task esbuild` | `packages/server/build/dist` |
 | Nginx / S3 / … | build, then copy | `packages/server/build/dist` |
 
 No SPA fallback rewriting is required beyond serving `index.html` for unknown routes —

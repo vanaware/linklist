@@ -4,7 +4,7 @@
  * text blocks (bio, about/section bodies, link subtitles, footer).
  *
  * It uses the `mdast-util-from-markdown` + GFM extension libraries and produces
- * Preact VNodes directly (no intermediate wire AST), keeping `@vanaware/linklist-core`
+ * Preact VNodes directly (no intermediate wire AST), keeping `@vanaware/linklist`
  * fully self-contained with no dependency on any other package.
  * Because it builds real VNodes there is no `dangerouslySetInnerHTML` and raw
  * HTML nodes are ignored, keeping rendering XSS-safe.
@@ -119,7 +119,7 @@ function parse(md: string,): MdNode {
  * @returns A Preact fragment of the rendered blocks (or null when empty).
  * @example
  * ```ts
- * import { renderMarkdown } from "@vanaware/linklist-core";
+ * import { renderMarkdown } from "@vanaware/linklist";
  * const node = renderMarkdown("Hello **world**");
  * ```
  */

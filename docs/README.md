@@ -1,10 +1,11 @@
 # @vanaware/linklist — Documentation
 
 `@vanaware/linklist` turns a single `config.json` into a fast, accessible, private
-link-in-bio page that you can host on GitHub Pages or any static host. The page is
-rendered entirely in the browser: the build emits a tiny static `index.html` shell plus
-`linklist.js`, which fetches `./config.json` at runtime, validates it, runs content
-plugins, applies the SEO head, resolves the theme and renders the Preact app.
+link-in-bio page that you can host on GitHub Pages or any static host. The build bakes
+the per-profile SEO `<head>`, `manifest.json` and `robots.txt` into real files (so
+crawlers and link previews work without JS), then `linklist.js` fetches `./config.json`
+at runtime, validates it, runs content plugins, resolves the theme and renders the
+Preact app into the body.
 
 ## Reading order
 
@@ -15,7 +16,7 @@ plugins, applies the SEO head, resolves the theme and renders the Preact app.
 4. **[Plugins](plugins.md)** — the built-in `github-repos` plugin and the plugin contract.
 5. **[Deploy](deploy.md)** — GitHub Pages, other static hosts and custom domains.
 6. **[API reference](api-reference.md)** — the public surface of
-   `@vanaware/linklist-core` (for embedding the engine in your own tooling or the future
+   `@vanaware/linklist` (for embedding the engine in your own tooling or the future
    SaaS tier).
 7. **[Site templates](templates/README.md)** — starter `config.json` files (e.g.
    `minimal.config.json`) ready to copy and edit.
@@ -30,7 +31,7 @@ plugins, applies the SEO head, resolves the theme and renders the Preact app.
 - **Privacy**: no analytics or click tracking unless you explicitly enable it.
 - **Build**: declarative, driven by [`@vanaware/buildit`](https://jsr.io/@vanaware/buildit)
   (`scripts/esbuild.jsonc` / `scripts/denobuild.jsonc`). No bespoke CLI.
-- **Packages**: `@vanaware/linklist-core` (schema, render runtime, the theme + plugin
+- **Packages**: `@vanaware/linklist` (schema, render runtime, the theme + plugin
   engines and the built-in plugins — the only JSR publication candidate) and
   `@vanaware/linklist-server` (a local static preview server for development and tests —
   never published). Everything ships in core — there is no separate themes or plugins

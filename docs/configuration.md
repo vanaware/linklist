@@ -2,7 +2,7 @@
 
 A linklist site is a single `config.json` object (JSON, **not** YAML). It is fully
 serializable and validated with ArkType plus a set of semantic cross-field checks. The
-canonical TypeScript shape is `LinklistConfig` in `packages/core/src/types.ts`; the JSON
+canonical TypeScript shape is `LinklistConfig` in `packages/core/src/lib/types.ts`; the JSON
 Schema used by editors is `packages/core/schema/config.schema.json`, published at
 `https://vanaware.github.io/linklist/config.schema.json`.
 

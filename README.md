@@ -14,13 +14,15 @@
 
 - **One file, whole page**: everything — profile, links, sections, theme, SEO — lives in
   a versioned `config.json`, validated with [ArkType](https://arktype.io).
-- **Pure client render**: the build emits a tiny static `index.html` shell plus
-  `linklist.js`, which fetches `./config.json` at runtime, runs plugins, applies the
-  per-config SEO head, and renders the Preact app. Paths are relative, so it works at a
-  domain root **or** a subfolder.
-- **100% Pure Deno**: no Node runtime, no `node_modules` workflow, no bespoke CLI. The
-  entire static build is declarative via [`@vanaware/buildit`](https://jsr.io/@vanaware/buildit)
-  (`scripts/esbuild.jsonc` / `scripts/denobuild.jsonc`).
+- **Static head + client-rendered body**: the build bakes the per-profile SEO `<head>`
+  (title / OG / Twitter / JSON-LD) and the PWA `manifest.json` into a real `index.html`,
+  while `linklist.js` fetches `./config.json` at runtime, runs plugins, applies the theme
+  and renders the Preact app. Crawlers and link previews see the metadata without JS.
+  Paths are relative, so it works at a domain root **or** a subfolder.
+- **100% Pure Deno**: no Node runtime and no `node_modules` workflow. The static build is
+  declarative via [`@vanaware/buildit`](https://jsr.io/@vanaware/buildit)
+  (`scripts/esbuild.jsonc` / `scripts/denobuild.jsonc`); a small Cliffy CLI in core
+  (`packages/core/src/cli.ts`) generates the site files and validates configs.
 - **BeerCSS themes**: presets (`minimal-dark`, `light-simple`) selectable via
   `config.theme.preset`, with token overrides (colors, radius, shadow, font).
 - **Rich text where you want it**: Markdown (CommonMark + GFM) in the bio, tagline,
@@ -42,7 +44,7 @@
 
 Start from a template: `docs/templates/minimal.config.json` (bare-bones) or
 `packages/core/public/config.json` (the fully-annotated sample that powers the official
-site). The shape mirrors `packages/core/src/types.ts`, with the JSON Schema at
+site). The shape mirrors `packages/core/src/lib/types.ts`, with the JSON Schema at
 `packages/core/schema/config.schema.json` (published at
 `https://vanaware.github.io/linklist/config.schema.json`).
 
@@ -134,15 +136,20 @@ The built-in `github-repos` plugin renders repository stars and the latest relea
 
 ```
 ├── packages/
-│   ├── core/                   # @vanaware/linklist-core: schema, validator, markdown,
-│   │   │                       #   state (signals), components, theme + seo, the plugin
-│   │   │                       #   engine AND built-in plugins, browser entry
+│   ├── core/                   # @vanaware/linklist (the engine)
 │   │   ├── src/
+│   │   │   ├── mod.ts          #   public API surface (side-effect-free)
+│   │   │   ├── entry.ts        #   browser bootstrap -> bundled linklist.js
+│   │   │   ├── cli.ts          #   build + validate CLI (Cliffy; the file-writing edge)
+│   │   │   ├── version.ts      #   build-stamped APP_VERSION (generated)
+│   │   │   ├── lib/            #   pure engine: types, schema, theme, seo, generate
+│   │   │   ├── components/     #   Preact UI + signals + markdown renderer
+│   │   │   └── plugins/        #   plugin engine + built-in plugins
 │   │   ├── schema/             #   config.schema.json (published for editors + the site)
 │   │   ├── themes/             #   BeerCSS theme presets (minimal-dark, light-simple)
 │   │   └── public/             #   index.html shell, config.json, manifest, favicon, robots
 │   └── server/                 # static file-server (serveDir) used for local preview
-├── scripts/                    # buildit configs + validate.ts (the only I/O edge)
+├── scripts/                    # buildit configs + export/version tooling (I/O edge)
 ├── .github/workflows/          # ci.yml (gate) + pages.yml (build & deploy)
 └── deno.jsonc                  # workspace + tasks
 ```

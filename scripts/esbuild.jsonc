@@ -54,7 +54,7 @@
     // linklist PRODUCTION bundle: same pipeline/output as `linklist` but minified
     // with an external source map. Run with
     // `esbuild -n linklist-dist`.
-    "linklist-dist": {
+    "dist": {
       "default": true,
       "srcdir": "packages/core/src",
       "distdir": "packages/core/dist",
@@ -64,7 +64,7 @@
       "entryPoints": [
         "entry.ts"
       ],
-      "outfile": "linklist.js",
+      "outfile": "linklist.min.js",
       "platform": "browser",
       "format": "esm",
       "bundle": true,

@@ -1,10 +1,11 @@
 /**
  * @file seo.ts
- * @description Pure, dependency-free builders for the document head metadata
- * (title, description, canonical, Open Graph, Twitter card, JSON-LD) and the
- * favicon data-URI. They take the validated config and return strings only; the
- * browser entry (`entry.ts` → `head.ts`) applies them to the live DOM at runtime.
- * The SaaS tier reuses these verbatim to serve the same metadata.
+ * @description Pure builders for the document head metadata (title, description,
+ * canonical, Open Graph, Twitter card, JSON-LD) and the favicon data-URI. Every
+ * function here returns strings only — no DOM, no filesystem. The generated head
+ * is baked into `index.html` at build time (see `generate.ts`), so crawlers and
+ * link-preview scrapers read it without executing JavaScript; the same builders
+ * are reused verbatim by the future server tier.
  */
 import { themeColor, } from "./theme.ts";
 import type { LinklistConfig, } from "./types.ts";

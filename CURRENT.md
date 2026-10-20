@@ -9,38 +9,47 @@ next task.
 - **UI stack — retained from mdBlog**: Preact + `@preact/signals` (components/state),
   **BeerCSS** for styling (loaded via **CDN**, exactly as mdBlog does today), and the
   **Markdown** pipeline for user-authored text.
-- **Render model — pure client render (mdBlog-style)**: the build copies a static
-  `index.html` shell (generic fallback head + `<noscript>`) into the output dir;
-  `linklist.js` fetches `./config.json` at runtime (relative, so it works at a domain
-  root OR subfolder), validates it, runs plugins, applies the per-config SEO head to
-  the live DOM (`core/src/head.ts` → `applyHead`), applies the theme and renders the
-  whole Preact `App` into `#app`. Nothing is pre-rendered and the config is NEVER
-  embedded — no-JS visitors get only the `<noscript>` notice.
-- **Build = buildit only (no CLI)**: `deno task build` runs the `linklist` target in
-  `scripts/esbuild.jsonc`, which (1) wipes `packages/server/build/dist`, (2) copies
-  the static shell + the sample `config.json` (`packages/core/public`) + theme CSS
-  (`packages/core/themes`) + the config schema (`packages/core/schema`) into it, and
-  (3) bundles `core/src/entry.ts` → `linklist.js`.
-  `deno task build:dist` is the minified prod twin. **The preferred engine is esbuild**;
-  `deno task build:deno` runs the same build through Deno's IN-PROCESS bundler
+- **Render model — static head + client-rendered body**: the build bakes the
+  per-profile SEO `<head>`, the PWA `manifest.json` and `robots.txt` into real files
+  (via `core/src/lib/generate.ts`), so crawlers and link-preview scrapers read the
+  metadata **without JavaScript**. `index.html` also ships a generic `<noscript>`
+  Linklist fallback listing the profile links. At runtime `linklist.js` (from
+  `core/src/entry.ts`) fetches `./config.json` (relative, so it works at a domain root
+  OR subfolder), validates it, runs plugins, applies the theme and hydrates the Preact
+  `App` into `#app` — it no longer injects the head (`applyHead`/`headFragment` are
+  gone). The config is still NEVER embedded; no-JS visitors get the `<noscript>`
+  fallback only.
+- **Build = codegen + buildit**: `deno task linklist:build` runs the core Cliffy CLI
+  (`core/src/cli.ts build`) to write `index.html` / `manifest.json` / `robots.txt` into
+  `packages/core/public`, then the bundler task (`esbuild` or `denobuild`) copies
+  `public` + theme CSS (`packages/core/themes`) + the config schema
+  (`packages/core/schema`) into `packages/server/build/dist` and bundles
+  `core/src/entry.ts` → `linklist.js`. **The preferred engine is esbuild**;
+  `deno task denobuild` runs the same build through Deno's IN-PROCESS bundler
   (`scripts/denobuild.jsonc`) for sandboxes where esbuild's subprocess cannot spawn.
-  `deno task dev` = `build` then the `packages/server` static server (`serveDir`) on the
-  port from `packages/server/.env` (`PORT`, 3000 or 8000) — the dir `pages.yml` deploys.
+  Both tasks chain `linklist:build` first. `deno task dev` = `denobuild` then the
+  `packages/server` static server (`serveDir`) on the port from `packages/server/.env`
+  (`PORT`, 3000 or 8000) — the dir `pages.yml` deploys. The generated
+  `public/{index.html,manifest.json,robots.txt}` are build artifacts and are
+  **git-ignored** (regenerated on every build, so a fresh clone needs no manual step).
 - **Markdown is allowed in**: `profile.bio` / `tagline`, dedicated about/section
   blocks, per-link `subtitle`, and the footer line (not plugin output areas, for now).
 - **Config**: a single `config.json` (JSON, not YAML) validated with **ArkType**
-  (`npm:arktype`). Structure mirrors `packages/core/src/types.ts`.
-- **No CLI package**: the former `packages/cli` is gone. Config validation lives in
-  `scripts/validate.ts` (`deno task validate-config <path>`); the build is declarative
-  (buildit) and preview uses `packages/server`.
+  (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`.
+- **CLI lives in core** (reverses the earlier "no CLI package" stance): the former
+  `packages/cli` is gone, but a small Cliffy program (`core/src/cli.ts`, exported from
+  `mod.ts` as command objects that never run on import) now owns two commands — `build`
+  (static-site codegen) and `validate [path]` (config validation, formerly
+  `scripts/validate.ts`, now deleted). Drive them with `deno task linklist:build` and
+  `deno task validate-config <path>`.
 - **Publishing scope**: `@vanaware/linklist-server` is a dev aid (local static preview
   server for development and tests) — it is NOT a library and will never be published;
   it stays `publish: false` permanently. The only future JSR publication candidate is
-  `@vanaware/linklist-core` (currently deferred, see `docs/publish-jsr-rules.md`).
+  `@vanaware/linklist` (currently deferred, see `docs/publish-jsr-rules.md`).
 - **Themes & built-in plugins live in core**: BeerCSS presets are selectable via
   `config.theme.preset` + token overrides and live in
   `packages/core/themes/{minimal-dark,light-simple}.css`, merged with `config.theme.custom`
-  by `core/src/theme.ts`. The plugin engine (`core/src/plugin.ts`) and the default plugins
+  by `core/src/lib/theme.ts`. The plugin engine (`core/src/plugins/engine.ts`) and the default plugins
   (`core/src/plugins/`, exporting `builtinPlugins`) are also in core — there is **no**
   separate themes or plugins package. There are no runtime third-party extension hooks
   (`theme.script` / `plugins.scripts`) until the engine is stable.
@@ -65,10 +74,10 @@ next task.
   and fmt all clean.
 - ✅ **M2b** — Replaced the raw-CSS placeholders with two BeerCSS-aligned presets
   (`packages/themes/css/minimal-dark.css`, `light-simple.css`) covering every component
-  class, plus a pure theme resolver in `core/src/theme.ts` (`tokensToCss`,
+  class, plus a pure theme resolver in `core/src/lib/theme.ts` (`tokensToCss`,
   `resolveThemeCss`, `themeBodyClass`, `themeColor`). Token overrides + color-scheme mode
   flow from `config.theme`.
-- ✅ **M3** — Static assembly. `core/src/seo.ts` (pure head/OG/Twitter/JSON-LD/manifest/
+- ✅ **M3** — Static assembly. `core/src/lib/seo.ts` (pure head/OG/Twitter/JSON-LD/manifest/
   sitemap/robots + `renderIndexHtml`) and `core/src/render.ts` (`prerender` via
   `preact-render-to-string`). CLI `build` command (validate → resolve theme → pre-render →
   emit `dist/{index.html,manifest.json,sitemap.xml,robots.txt}`) with `--out`,
@@ -113,7 +122,7 @@ next task.
   `syntax-and-islands.md`). The `docs/` set is now: `README.md` (index), `guide.md`
   (getting started), `configuration.md` (full `config.json` reference), `theming.md`,
   `plugins.md`, `deploy.md` (GitHub Pages + other hosts + custom domain) and a rewritten
-  `api-reference.md` (the `@vanaware/linklist-core` public surface). Reframed
+  `api-reference.md` (the `@vanaware/linklist` public surface). Reframed
   `publish-jsr-rules.md` as a deferred-publishing guide (matches the removed JSR workflow).
   Added root `CONTRIBUTING.md`, a `templates/` starter (`minimal.config.json` + README), a
   Documentation section + token-name fix in `README.md`, and cleaned the stale "`cli`"
@@ -181,7 +190,33 @@ next task.
   Approved screenshots of each theme saved to `docs/assets/screenshots/` and
   embedded in `README.md` (Theming) and `docs/theming.md` (which also got its
   stale pre-`--ll-*` token table and preset guidance fixed).
-- ⏭️ **M6 (next)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
+- ✅ **M5i** — Core source refactor & API surface cleanup. Folded `head.ts` into
+  `seo.ts` (`applyHead`/`headFragment` were a thin shell over `buildHead`), moved
+  the plugin engine to `plugins/engine.ts`, and relocated the render-support
+  modules `state.ts` + `markdown.ts` into `components/` (their only consumers).
+  Deleted the dead exports (`IO` type, `CORE_VERSION` const, `schema_smoke_test.ts`);
+  `version.ts` stays (buildit-generated, consumed by `Footer`). Unified the package
+  name: every doc/JSDoc reference to the stale `@vanaware/linklist-core` now reads
+  `@vanaware/linklist` (the actual `deno.jsonc` name). Documented WHY the public
+  API (`mod.ts`, side-effect-free) and the bundle (`entry.ts` → `linklist.js`,
+  self-booting) are two surfaces of one engine — they intentionally differ; a
+  comparison table now lives in `docs/api-reference.md`. Further consolidated the
+  pure engine under `core/src/lib/` (`types.ts`, `schema.ts`, `theme.ts`, `seo.ts`);
+  `src/` now holds only `mod.ts`, `entry.ts`, `version.ts`, `components/` and `plugins/`.
+- ✅ **M6** — Build-time static head + site codegen CLI. Added
+  `core/src/lib/generate.ts` (pure `renderIndexHtml` / `renderManifest` /
+  `renderRobotsTxt` / `generateSite` — the full text of each file is embedded in code,
+  no template read/modify, reusable by a future server) and `core/src/cli.ts` (Cliffy
+  `linklistCommand` with `build` + `validate` subcommands + `buildSiteFiles`, exported
+  from `mod.ts`, guarded by `import.meta.main`). Removed `applyHead`/`headFragment`
+  from `seo.ts` and the `applyHead` call from `entry.ts` — the head is now baked at
+  build. Added `@cliffy/command` to core; added the `linklist:build` task and chained
+  it into `esbuild`/`denobuild`; repointed `validate-config` to the CLI and deleted
+  `scripts/validate.ts`; fixed `dev` (it referenced a nonexistent `build`). New tests
+  (`generate_test.ts`, `cli_test.ts`) + `seo_test.ts` cleanup: 25 suites / 61 steps
+  green; verified `linklist:build` writes baked head + manifest and `denobuild` ships
+  them to dist with 0 `applyHead` in the bundle.
+- ⏭️ **M7 (next)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
   results (AA contrast portion already covered in M5f).
 
 ## Known environment note
@@ -189,7 +224,8 @@ next task.
 The mdBlog package is gone, so `deno task tests` runs the linklist packages only and is
 fully green. esbuild still cannot run in THIS container (its npm subprocess fails with
 `ChildProcess.unref` undefined even with `-A`) — a sandbox limitation, not a code bug, and
-CI runners build fine. For a working local preview here, run `deno task build:deno` (Deno's
-in-process bundler) to emit `linklist.js`, then `deno task serve`. Note that a
+CI runners build fine. For a working local preview here, run `deno task denobuild`
+(Deno's in-process bundler; it runs `linklist:build` first) to emit the codegen files +
+`linklist.js`, then `deno task dev` to serve `packages/server/build/dist`. Note that a
 previously-installed mdBlog Service Worker can keep serving cached pages on an origin
 (`:8000`) even after removal — clear the site data or use a fresh port (`:3000`).

@@ -7,8 +7,8 @@
 import { assertEquals, assertStringIncludes, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
 import { githubReposPlugin, } from "../src/plugins/github_repos.ts";
-import type { PluginContext, } from "../src/plugin.ts";
-import type { LinklistConfig, } from "../src/types.ts";
+import type { PluginContext, } from "../src/plugins/engine.ts";
+import type { LinklistConfig, } from "../src/lib/types.ts";
 
 function cfg(repos: string[],): LinklistConfig {
   return {

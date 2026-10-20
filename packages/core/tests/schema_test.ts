@@ -5,7 +5,7 @@
  */
 import { describe, it, } from "@std/testing/bdd";
 import { assert, assertEquals, assertStringIncludes, } from "@std/assert";
-import { parseAndValidate, validateConfig, } from "../src/schema.ts";
+import { parseAndValidate, validateConfig, } from "../src/lib/schema.ts";
 
 /** A minimal, valid config used as the base for mutations. */
 function baseConfig() {

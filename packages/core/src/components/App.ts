@@ -6,8 +6,8 @@
  * (the latter keeps server-side rendering and tests pure/deterministic).
  */
 import { html, } from "htm/preact";
-import { configSignal, } from "../state.ts";
-import type { LinklistConfig, } from "../types.ts";
+import { configSignal, } from "./state.ts";
+import type { LinklistConfig, } from "../lib/types.ts";
 import { ContentSection, } from "./ContentSection.ts";
 import { Footer, } from "./Footer.ts";
 import { LinkList, } from "./LinkList.ts";

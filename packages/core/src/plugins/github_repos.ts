@@ -6,11 +6,7 @@
  * the host places it — at build time (SaaS) or in the browser — and only fires
  * when the user opts in via config (no default network calls).
  */
-import type {
-  LinklistPlugin,
-  PluginContext,
-  PluginOutput,
-} from "../plugin.ts";
+import type { LinklistPlugin, PluginContext, PluginOutput, } from "./engine.ts";
 
 interface GhRepo {
   stargazers_count?: number;

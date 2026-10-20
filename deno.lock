@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@cliffy/command@^1.0.0-rc.5": "1.3.1",
     "jsr:@cliffy/command@^1.3.1": "1.3.1",
     "jsr:@cliffy/flags@^1.3.1": "1.3.1",
     "jsr:@cliffy/internal@^1.3.1": "1.3.1",
@@ -172,7 +173,7 @@
     "@vanaware/buildit@0.5.2": {
       "integrity": "bf4097ebe29aad1a2c9530e21fa03739019aafc85117bfffcbe2bda60a1b773f",
       "dependencies": [
-        "jsr:@cliffy/command",
+        "jsr:@cliffy/command@^1.3.1",
         "jsr:@deno/esbuild-plugin",
         "jsr:@std/fs",
         "jsr:@std/jsonc",
@@ -1014,6 +1015,7 @@
     "members": {
       "packages/core": {
         "dependencies": [
+          "jsr:@cliffy/command@^1.0.0-rc.5",
           "jsr:@std/assert@^1.0.19",
           "jsr:@std/path@^1.1.6",
           "jsr:@std/testing@^1.0.20",

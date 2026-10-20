@@ -3,7 +3,7 @@
  * @description Avatar, name, tagline and (Markdown) bio for the bio header.
  */
 import { html, } from "htm/preact";
-import type { Profile, } from "../types.ts";
+import type { Profile, } from "../lib/types.ts";
 import { MarkdownText, } from "./MarkdownText.ts";
 
 export interface ProfileHeaderProps {
