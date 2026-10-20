@@ -76,6 +76,49 @@ describe("validateConfig — semantic cross-field rules", () => {
     }
   });
 
+  it("requires theme.custom colors to be plain hex", () => {
+    const bad = validateConfig({
+      ...baseConfig(),
+      theme: { preset: "x", custom: { primary_color: "red", }, },
+    },);
+    assert(!bad.ok,);
+    if (!bad.ok) {
+      assertStringIncludes(
+        bad.errors.join("\n",),
+        "theme.custom.primary_color",
+      );
+    }
+    const good = validateConfig({
+      ...baseConfig(),
+      theme: { preset: "x", custom: { primary_color: "#a78bfa", }, },
+    },);
+    assert(good.ok, JSON.stringify(good,),);
+  });
+
+  it("rejects markup-bearing font_family / radius values", () => {
+    const result = validateConfig({
+      ...baseConfig(),
+      theme: {
+        preset: "x",
+        custom: { font_family: "ui</style><script>", radius: "1px; }", },
+      },
+    },);
+    assert(!result.ok,);
+    if (!result.ok) {
+      const joined = result.errors.join("\n",);
+      assertStringIncludes(joined, "theme.custom.font_family",);
+      assertStringIncludes(joined, "theme.custom.radius",);
+    }
+  });
+
+  it("accepts the editor-only $schema key (inexact objects)", () => {
+    const result = validateConfig({
+      $schema: "./config.schema.json",
+      ...baseConfig(),
+    },);
+    assert(result.ok, JSON.stringify(result,),);
+  });
+
   it("requires avatar_alt when avatar is set", () => {
     const cfg = baseConfig();
     (cfg.profile as Record<string, unknown>).avatar = "./a.png";

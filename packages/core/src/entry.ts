@@ -130,6 +130,13 @@ async function boot(): Promise<void> {
     base = result.data;
   } catch (error) {
     warn(`could not load config.json: ${messageOf(error,)}`,);
+    // The build-time <noscript> fallback only paints with JS off, so render
+    // a visible message instead of leaving a blank page (mirrors the
+    // invalid-config branch above).
+    render(
+      h("div", { class: "error", }, "Could not load config.json.",),
+      mount,
+    );
     return;
   }
 

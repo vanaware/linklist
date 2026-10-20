@@ -47,8 +47,11 @@ export interface LinkItem {
 
 /** Theme token overrides — customize without editing CSS. */
 export interface ThemeTokens {
+  /** Brand color as a plain hex value (`#rgb` / `#rrggbb` …). */
   primary_color?: string;
+  /** Page background as a plain hex value (`#rgb` / `#rrggbb` …). */
   background_color?: string;
+  /** Body text color as a plain hex value (`#rgb` / `#rrggbb` …). */
   text_color?: string;
   /** CSS font stack. Defaults to the system stack (no webfont fetch). */
   font_family?: string;
@@ -130,12 +133,17 @@ export interface ContentSection {
 export interface LinklistConfig {
   /** Optional schema version stamp for forward compatibility. */
   version?: string;
+  /** Identity block: name, tagline, bio, avatar. Name is required. */
   profile: Profile;
   /** At least one link is required. */
   links: LinkItem[];
+  /** Preset + mode + token overrides for the page appearance. */
   theme: ThemeConfig;
+  /** Optional SEO/social metadata (falls back to profile fields). */
   seo?: SeoConfig;
+  /** Optional analytics; everything defaults to disabled (privacy-first). */
   analytics?: AnalyticsConfig;
+  /** Optional built-in plugin toggles and footer options. */
   plugins?: PluginsConfig;
   /** Optional Markdown content blocks placed before/after the link list. */
   sections?: ContentSection[];

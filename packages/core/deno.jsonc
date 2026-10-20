@@ -1,28 +1,32 @@
 {
   "name": "@vanaware/linklist",
-  "version": "0.1.19#mvftz59i",
+  "version": "0.1.23#mvgw3k3l",
   "description": "Pure config schema, validator and static renderer for linklist.",
   "author": "Vanaware",
   "license": "MIT",
-  "publish": false,
   "compilerOptions": {
+    // Core runs in BOTH worlds: the browser bundle (entry.ts + components —
+    // needs DOM) and the Deno CLI/tests (cli.ts — needs the Deno namespace).
     "lib": [
       "deno.window",
       "dom",
       "dom.iterable"
-    ]
+    ],
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true
   },
   "exports": {
     ".": "./src/mod.ts"
   },
   "imports": {
+    // Package-exclusive deps only. `@std/path` is workspace-common and comes
+    // from the root deno.jsonc import map.
     "@cliffy/command": "jsr:@cliffy/command@^1.0.0-rc.5",
     "@std/assert": "jsr:@std/assert@^1.0.19",
-    "@std/path": "jsr:@std/path@^1.1.6",
     "@std/testing": "jsr:@std/testing@^1.0.20",
     "arktype": "npm:arktype@^2.1.20",
     "preact": "npm:preact@10.25.4",
-    "preact/compat": "npm:preact@10.25.4/compat",
     "preact-render-to-string": "npm:preact-render-to-string@^6.5.13",
     "@preact/signals": "npm:@preact/signals@2.0.1",
     "htm/preact": "npm:htm@^3.1.1/preact",
@@ -38,19 +42,78 @@
     "fmt:check": "deno fmt --check",
     "tests": "deno task check && deno task lint && deno task test"
   },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "README.md",
+      "docs/**/*.md",
+      "dist/linklist.min.js",
+      "dist/linklist.min.js.map",
+      "deno.jsonc",
+      "public",
+      "schema",
+      "themes"
+    ],
+    "exclude": [
+      "tests"
+    ]
+  },
   "lint": {
     "rules": {
       "tags": [
         "recommended"
       ],
+      "include": [
+        "ban-untagged-todo"
+      ],
       "exclude": [
         "no-unused-vars"
       ]
-    }
-  },
-  "test": {
+    },
     "include": [
+      "src/**/*.{ts,tsx}",
       "tests/**/*test.ts"
     ]
-  }
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "write": true,
+      "net": true,
+      "env": true,
+      "sys": true,
+      "run": true,
+      "ffi": true,
+      "import": true
+    },
+    "include": [
+      "tests/**/*test.ts"
+    ],
+    "exclude": [
+      "src/**/*.{ts,tsx}"
+    ]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve",
+    "trailingCommas": "always",
+    "json.trailingCommas": "never",
+    "operatorPosition": "maintain",
+    "jsx.bracketPosition": "sameLine",
+    "jsx.forceNewLinesSurroundingContent": true,
+    "jsx.multiLineParens": "always",
+    "newLineKind": "lf",
+    "include": [
+      "src/**/*.{ts,tsx,js}",
+      "tests/**/*test.ts"
+    ]
+  },
+  "exclude": [
+    "docs",
+    "dist"
+  ]
 }

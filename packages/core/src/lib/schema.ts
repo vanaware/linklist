@@ -11,11 +11,12 @@
  * the browser entry (`entry.ts`) and the `cli.ts` tooling edge.
  */
 
-import { type, } from "arktype";
+import { type Type, type, } from "arktype";
 import type { LinklistConfig, } from "./types.ts";
 
 /** Result of a successful validation. */
 export interface ValidationSuccess {
+  /** Success discriminant — `data` is present when `true`. */
   ok: true;
   /** The validated, fully-typed configuration. */
   data: LinklistConfig;
@@ -23,6 +24,7 @@ export interface ValidationSuccess {
 
 /** Result of a failed validation. */
 export interface ValidationFailure {
+  /** Failure discriminant — `errors` is non-empty when `false`. */
   ok: false;
   /** Friendly, human-readable error messages, each pointing at a config path. */
   errors: string[];
@@ -106,7 +108,7 @@ const sectionType = type({
  * "inexact" so extra keys (such as `$schema` used for editor autocompletion) do
  * not fail validation.
  */
-export const configType = type({
+export const configType: Type<LinklistConfig> = type({
   "version?": "string",
   profile: profileType,
   links: linkItemType.array(),
@@ -126,6 +128,12 @@ function isHttpUrl(value: string,): boolean {
     return false;
   }
 }
+
+/** Plain hex colors only (#rgb…#rrggbbaa) — what favicon/CSS consumers accept. */
+const HEX_COLOR = /^#([0-9a-fA-F]{3,8})$/;
+
+/** CSS-ish token values must never carry structural markup/terminator chars. */
+const CSS_UNSAFE = /[<>{};"]/;
 
 /**
  * Cross-field rules that structural typing cannot express. Receives an object
@@ -153,6 +161,26 @@ function semanticErrors(data: LinklistConfig,): string[] {
 
   if (data.seo?.url && !isHttpUrl(data.seo.url,)) {
     errors.push(`seo.url: not a valid http(s) URL (got "${data.seo.url}")`,);
+  }
+
+  const tokens = data.theme.custom;
+  for (
+    const key of ["primary_color", "background_color", "text_color",] as const
+  ) {
+    const value = tokens?.[key];
+    if (value && !HEX_COLOR.test(value,)) {
+      errors.push(
+        `theme.custom.${key}: expected a hex color like #rgb or #rrggbb (got "${value}")`,
+      );
+    }
+  }
+  for (const key of ["font_family", "radius",] as const) {
+    const value = tokens?.[key];
+    if (value && CSS_UNSAFE.test(value,)) {
+      errors.push(
+        `theme.custom.${key}: contains an unsafe character (one of < > { } ; ")`,
+      );
+    }
   }
 
   const a = data.analytics;

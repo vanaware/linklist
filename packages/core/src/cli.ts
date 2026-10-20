@@ -1,5 +1,3 @@
-/// <reference lib="deno.ns" />
-
 /**
  * @file cli.ts
  * @description Linklist command-line tools (Cliffy). Two subcommands:
@@ -63,7 +61,7 @@ export async function buildSiteFiles(
 }
 
 /** The root `linklist` program; the subcommands below attach to it. */
-export const linklistCommand = new Command()
+export const linklistCommand: Command = new Command()
   .name("linklist",)
   .description("Linklist build & validation tools.",)
   .default("help",);
@@ -105,7 +103,7 @@ export const validateCommand = linklistCommand
   .description("Validate a config.json and print path-pointed errors.",)
   .option("--json", "Emit a machine-readable JSON report.",)
   .action(async ({ json, }, path,) => {
-    const configPath = path ?? "config.json";
+    const configPath = path ?? DEFAULT_CONFIG;
     const text = await Deno.readTextFile(configPath,).catch(() => null);
     const errors: string[] = [];
     if (text === null) {

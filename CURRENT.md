@@ -38,14 +38,27 @@ next task.
   (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`.
 - **CLI lives in core** (reverses the earlier "no CLI package" stance): the former
   `packages/cli` is gone, but a small Cliffy program (`core/src/cli.ts`, exported from
-  `mod.ts` as command objects that never run on import) now owns two commands — `build`
-  (static-site codegen) and `validate [path]` (config validation, formerly
-  `scripts/validate.ts`, now deleted). Drive them with `deno task linklist:build` and
-  `deno task validate-config <path>`.
+  `mod.ts` as `linklistCommand` + `buildSiteFiles` — only the root command object is
+  public; subcommand instances carry infeasible cliffy generic variance) now owns two
+  commands — `build` (static-site codegen) and `validate [path]` (config validation,
+  defaults to the sample config; formerly `scripts/validate.ts`, now deleted). Drive
+  them with `deno task linklist:build` and `deno task validate-config [path]`.
+- **JSR public surface = pure engine only**: `mod.ts` exports types, validation
+  (minus `configType`), theme/SEO/generate helpers, the plugin contract + built-ins and
+  the CLI root. The Preact runtime (`components/`, `markdown.ts`, `state.ts`) is
+  deliberately internal: `deno doc --lint` walks the FULL type graph of every export,
+  and npm-hosted graphs (preact, @preact/signals-core, arktype) are undocumented
+  upstream — their private symbols (`BRAND_SYMBOL`, `SignalOptions`, …) can never pass
+  doc-lint, while JSR-hosted deps (cliffy, @std) can. Consume rendering via the
+  `linklist.js` bundle or monorepo deep imports.
 - **Publishing scope**: `@vanaware/linklist-server` is a dev aid (local static preview
   server for development and tests) — it is NOT a library and will never be published;
-  it stays `publish: false` permanently. The only future JSR publication candidate is
-  `@vanaware/linklist` (currently deferred, see `docs/publish-jsr-rules.md`).
+  it stays `publish: false` permanently. The only JSR publication is
+  `@vanaware/linklist` — publish-enabled via its `"publish": { include/exclude }`
+  block (see `docs/publish-jsr-rules.md`); a release = push a `v*.*` tag.
+  `.github/workflows/jsr-publish.yml` is the **release gate** (tests → lint:doc →
+  sanitize-version → README check → publish dry-run → publish, on a `v*.*` tag); `packages/core/dist/` stays git-tracked on purpose (JSR publishes only
+  tracked files).
 - **Themes & built-in plugins live in core**: BeerCSS presets are selectable via
   `config.theme.preset` + token overrides and live in
   `packages/core/themes/{minimal-dark,light-simple}.css`, merged with `config.theme.custom`
@@ -216,6 +229,39 @@ next task.
   (`generate_test.ts`, `cli_test.ts`) + `seo_test.ts` cleanup: 25 suites / 61 steps
   green; verified `linklist:build` writes baked head + manifest and `denobuild` ships
   them to dist with 0 `applyHead` in the bundle.
+- ✅ **M6b** — Pre-release audit fixes (jsr-publish gate readiness). Schema: `$schema`
+  now accepted (`config.schema.json` + tests), theme hex-color and CSS-injection
+  validation added to `semanticErrors`. Generators: preset CSS is `<link>`ed in the
+  baked head (fixes unstyled noscript/FOUC), `manifest.json` only sets
+  `background_color` when configured, favicon `iconType` strips `?#` queries.
+  `buildJsonLd`/`buildHead` honor `--base-url` consistently; `faviconDataUri` guards
+  malformed colors; `entry.ts` renders a visible error view when `config.json`
+  fetch fails (no more blank page); `validate` defaults to the sample config; root
+  `watch` chains `linklist:build` again. Surface: `mod.ts` shrunk to the pure engine
+  (see the JSR-surface decision) after a JSDoc sweep — `deno task lint:doc` is now
+  **0 errors** (was 49). Added `packages/core/README.md` with an executable example
+  (verified via `deno eval`), fixed stale README/AGENTS paths, synced
+  `docs/api-reference.md` (+marked internal sections) and `docs/publish-jsr-rules.md`.
+  Gates: 25 suites / 64 steps, check/lint/fmt/doc-lint clean, `linklist:build` +
+  `esbuild` ship the baked preset link to dist. A full publish SIMULATION (temporary
+  `publish: true` + sanitized version, then reverted) surfaced and fixed the last real
+  issue — a JSR-banned `/// <reference lib="deno.ns" />` in `cli.ts` — and the dry-run
+  now completes green. The workflow also learned `deno publish` must run with
+  `working-directory: packages/core` (the root `deno.jsonc` has no `name`).
+- ✅ **M6c** — Workspace config hygiene + publish ENABLED. Import maps were
+  redistributed: root `deno.jsonc` keeps only what is common (`@std/path`) or
+  root-script-only (`@vanaware/buildit`); `@std/assert`/`@std/testing` and every
+  UI/validator dep live exclusively in `packages/core`; `packages/server` keeps
+  only `@std/http` (it inherits `@std/path` from the root map — inheritance
+  verified by the member `check` tasks). The never-imported `preact/compat`
+  specifier was dropped. Each config now carries its own commented
+  `compilerOptions` (root scripts: `deno.ns`+`esnext`; core: `deno.window`+`dom`
+  because it runs in both worlds; server: `deno.window`), all strict.
+  `packages/core/deno.jsonc` gained an explicit `"publish": { include/exclude }`
+  block (ships src/README/dist/public/schema/themes, excludes tests) replacing
+  `"publish": false` — the publish dry-run passes with it. Docs
+  (`publish-jsr-rules.md`, workflow header) now read **ready to publish**: the
+  only release step left is pushing a `v*.*` tag (and the `@vanaware` JSR scope)
 - ⏭️ **M7 (next)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
   results (AA contrast portion already covered in M5f).
 

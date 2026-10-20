@@ -30,6 +30,8 @@
     "jsr:@std/streams@^1.2.0": "1.2.0",
     "jsr:@std/testing@^1.0.20": "1.0.21",
     "jsr:@std/text@^1.0.19": "1.1.0",
+    "jsr:@std/yaml@*": "1.3.0",
+    "jsr:@std/yaml@1": "1.3.0",
     "jsr:@vanaware/buildit@~0.5.2": "0.5.2",
     "npm:@preact/signals@2.0.1": "2.0.1_preact@10.25.4",
     "npm:@types/mdast@4.0.4": "4.0.4",
@@ -169,6 +171,9 @@
     },
     "@std/text@1.1.0": {
       "integrity": "3db511996317f63e35b76fe18fe35249723ae0ff6f8305398c78dd64ffa809a7"
+    },
+    "@std/yaml@1.3.0": {
+      "integrity": "b250103854378b8b36cbff0fe95aec017d3d9ce86b489c67605180c602fb4922"
     },
     "@vanaware/buildit@0.5.2": {
       "integrity": "bf4097ebe29aad1a2c9530e21fa03739019aafc85117bfffcbe2bda60a1b773f",
@@ -1007,9 +1012,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@^1.0.19",
       "jsr:@std/path@^1.1.6",
-      "jsr:@std/testing@^1.0.20",
       "jsr:@vanaware/buildit@~0.5.2"
     ],
     "members": {
@@ -1017,7 +1020,6 @@
         "dependencies": [
           "jsr:@cliffy/command@^1.0.0-rc.5",
           "jsr:@std/assert@^1.0.19",
-          "jsr:@std/path@^1.1.6",
           "jsr:@std/testing@^1.0.20",
           "npm:@preact/signals@2.0.1",
           "npm:arktype@^2.1.20",
@@ -1031,8 +1033,7 @@
       },
       "packages/server": {
         "dependencies": [
-          "jsr:@std/http@^1.1.4",
-          "jsr:@std/path@^1.1.6"
+          "jsr:@std/http@^1.1.4"
         ]
       }
     }

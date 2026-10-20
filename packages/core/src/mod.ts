@@ -5,14 +5,20 @@
  * `entry.ts`, which buildit bundles into `linklist.js`; importing this module
  * never fetches or renders anything).
  *
- * The core is pure: it exposes the config schema (types) and the validator
- * (`lib/schema.ts`), the client rendering runtime (Preact components + signals),
- * the theme helpers (`lib/theme.ts`), the SEO/head builders (`lib/seo.ts`) and the
- * static-file generators (`lib/generate.ts`) that bake a config into
- * `index.html` / `manifest.json` / `robots.txt`. The `linklist` CLI (`cli.ts` —
- * build + validate) is exported as command objects; importing them never runs
- * anything. The browser entry (`entry.ts`, not exported here) is the only module
- * with import-time side effects.
+ * The public API is the pure engine: the config types (`lib/types.ts`) and
+ * validator (`lib/schema.ts`), the theme helpers (`lib/theme.ts`), the SEO/head
+ * builders (`lib/seo.ts`), the static-file generators (`lib/generate.ts`) that
+ * bake a config into `index.html` / `manifest.json` / `robots.txt`, the plugin
+ * contract + built-ins, and the `linklist` CLI (`cli.ts` — build + validate,
+ * exported as command objects; importing them never runs anything).
+ *
+ * Deliberately NOT public: the Preact rendering runtime (`components/`,
+ * `markdown.ts`, `state.ts`) and `configType`. Their npm `preact` /
+ * `@preact/signals` / `arktype` type graphs cannot be re-exported as a
+ * documented JSR surface (private-type-ref / missing-jsdoc cascade through the
+ * upstream `.d.ts`); consume them via the `linklist.js` bundle or monorepo
+ * deep imports. `entry.ts` (not exported here) is the only module with
+ * import-time side effects.
  */
 
 export type {
@@ -27,34 +33,12 @@ export type {
   ThemeTokens,
 } from "./lib/types.ts";
 
-export { configType, parseAndValidate, validateConfig, } from "./lib/schema.ts";
+export { parseAndValidate, validateConfig, } from "./lib/schema.ts";
 export type {
   ValidationFailure,
   ValidationResult,
   ValidationSuccess,
 } from "./lib/schema.ts";
-
-// Rendering runtime (Preact + Signals + BeerCSS markup).
-export {
-  renderInlineMarkdown,
-  renderMarkdown,
-} from "./components/markdown.ts";
-export {
-  computed,
-  configSignal,
-  linksSignal,
-  setConfig,
-  signal,
-  themeSignal,
-} from "./components/state.ts";
-export { App, } from "./components/App.ts";
-export type { AppProps, } from "./components/App.ts";
-export { BrandIcon, } from "./components/BrandIcon.ts";
-export { ContentSection as ContentSectionView, } from "./components/ContentSection.ts";
-export { Footer, } from "./components/Footer.ts";
-export { LinkList, LinkRow, } from "./components/LinkList.ts";
-export { MarkdownText, } from "./components/MarkdownText.ts";
-export { ProfileHeader, } from "./components/ProfileHeader.ts";
 
 // Static metadata builders (pure string helpers; no filesystem access).
 export {
@@ -96,10 +80,7 @@ export type {
 // Built-in plugins (the default data contributions core ships with).
 export { builtinPlugins, githubReposPlugin, } from "./plugins/mod.ts";
 
-// Build/validate CLI (Cliffy command objects; parsing only runs via `deno run`).
-export {
-  buildCommand,
-  buildSiteFiles,
-  linklistCommand,
-  validateCommand,
-} from "./cli.ts";
+// Build/validate CLI (Cliffy; parsing only runs via `deno run`). Only the
+// root program and the reusable writer are public: subcommand instances carry
+// infeasible generic variance, reach them via `linklistCommand.getCommand()`.
+export { buildSiteFiles, linklistCommand, } from "./cli.ts";

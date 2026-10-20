@@ -6,6 +6,7 @@
   "required": ["profile", "links", "theme"],
   "additionalProperties": false,
   "properties": {
+    "$schema": { "type": "string" },
     "version": { "type": "string" },
     "profile": {
       "type": "object",
@@ -52,11 +53,20 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "primary_color": { "type": "string" },
-            "background_color": { "type": "string" },
-            "text_color": { "type": "string" },
-            "font_family": { "type": "string" },
-            "radius": { "type": "string" },
+            "primary_color": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{3,8})$"
+            },
+            "background_color": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{3,8})$"
+            },
+            "text_color": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{3,8})$"
+            },
+            "font_family": { "type": "string", "pattern": "^[^<>{};\"]*$" },
+            "radius": { "type": "string", "pattern": "^[^<>{};\"]*$" },
             "shadow": { "enum": ["none", "small", "medium", "large"] }
           }
         }

@@ -35,6 +35,11 @@ async function repoLine(ctx: PluginContext, repo: string,): Promise<string> {
   return `- [${repo}](${url}) — ${meta}`;
 }
 
+/**
+ * Built-in `github-repos` plugin: fetches each configured `owner/repo` and
+ * appends a Markdown section listing stars (and the latest release tag when
+ * present). Failures per repo degrade to a plain link; see `plugins.md`.
+ */
 export const githubReposPlugin: LinklistPlugin = {
   name: "github-repos",
   async run(ctx: PluginContext,): Promise<PluginOutput> {

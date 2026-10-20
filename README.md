@@ -71,24 +71,27 @@ Open the URL the server prints. (See [Building](#-build) for the sandbox fallbac
 
 ## 🏗️ Build
 
-The build is entirely driven by buildit config files — clean the output dir, copy the
-static shell + theme CSS + `config.json`, and bundle `core/src/entry.ts` → `linklist.js`:
+The build is entirely driven by buildit config files — first `deno task linklist:build`
+regenerates `index.html` / `manifest.json` / `robots.txt` (SEO head baked in) into
+`packages/core/public`, then the bundler cleans the output dir, copies the static assets
++ theme CSS + `config.json`, and bundles `core/src/entry.ts` → `linklist.js`:
 
 | Task                   | Engine                  | Output                       | Notes                                                          |
 | ---------------------- | ----------------------- | ---------------------------- | -------------------------------------------------------------- |
-| `deno task build`      | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle, used by `dev`.                                     |
-| `deno task build:dist` | esbuild                 | `packages/core/dist`         | Minified production bundle.                                    |
-| `deno task build:deno` | Deno in-process bundler | `packages/server/build/dist` | Fallback for sandboxes where esbuild's subprocess can't spawn. |
+| `deno task esbuild`    | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle; runs `linklist:build` first.                        |
+| `deno task denobuild`  | Deno in-process bundler | `packages/server/build/dist` | Fallback for sandboxes where esbuild's subprocess can't spawn. |
+| `deno task linklist:build` | core CLI (`src/cli.ts`) | `packages/core/public`   | Site-file codegen only (chained by the tasks above).           |
 
 > ⚠️ **Local sandbox note**: on some locked-down containers esbuild's npm subprocess
-> cannot start (`ChildProcess.unref` undefined). There, use `deno task build:deno` (Deno's
-> own in-process bundler) to produce `linklist.js`, then `deno task serve`. CI runners
+> cannot start (`ChildProcess.unref` undefined). There, use `deno task denobuild` (Deno's
+> own in-process bundler) to produce `linklist.js`, then `deno task dev`. CI runners
 > build with esbuild normally.
 
-Then serve the built folder with the static server:
+Everything above is wrapped by one command, which builds and then serves the output
+with the static server:
 
 ```bash
-deno task serve      # packages/server static file-server (port from packages/server/.env)
+deno task dev        # denobuild + packages/server file-server (port from packages/server/.env)
 ```
 
 ---
@@ -170,7 +173,7 @@ deno task test       # BDD tests (@std/testing/bdd + @std/assert) only
 - **GitHub Pages**: push a `v*.*` tag (or run the workflow manually). `pages.yml` runs the
   gate, builds the site into `packages/server/build/dist`, and publishes it. The site uses
   relative paths, so a project-page subfolder works out of the box.
-- **Any static host**: run `deno task build` (or `build:deno`) and upload
+- **Any static host**: run `deno task esbuild` (or `denobuild`) and upload
   `packages/server/build/dist` — it is fully self-contained.
 - **Custom domain**: point DNS at your host and add a `CNAME`; never hardcode base paths.
 

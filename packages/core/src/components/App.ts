@@ -6,6 +6,7 @@
  * (the latter keeps server-side rendering and tests pure/deterministic).
  */
 import { html, } from "htm/preact";
+import type { VNode, } from "preact";
 import { configSignal, } from "./state.ts";
 import type { LinklistConfig, } from "../lib/types.ts";
 import { ContentSection, } from "./ContentSection.ts";
@@ -13,13 +14,22 @@ import { Footer, } from "./Footer.ts";
 import { LinkList, } from "./LinkList.ts";
 import { ProfileHeader, } from "./ProfileHeader.ts";
 
+/** Props for the root {@linkcode App} component. */
 export interface AppProps {
+  /** Config to render; falls back to the shared `configSignal` store. */
   config?: LinklistConfig;
   /** Build timestamp for the footer (defaults to now). */
   timestamp?: number;
 }
 
-export function App(props: AppProps = {},) {
+/**
+ * Root component: composes profile header, before-sections, link list,
+ * after-sections and the optional footer into the BeerCSS page tree.
+ *
+ * @param props - Optional `config` (otherwise read from `configSignal`).
+ * @returns The rendered page VNode, or an empty-state notice without a config.
+ */
+export function App(props: AppProps = {},): VNode {
   const config = (props.config ?? configSignal.value) as LinklistConfig | null;
   if (!config) {
     return html`<div class="empty">No configuration loaded.</div>`;

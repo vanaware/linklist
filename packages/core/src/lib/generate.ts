@@ -33,7 +33,8 @@ const MATERIAL_ICONS =
 
 /** Icon MIME type inferred from the path extension (defaults to png). */
 function iconType(src: string,): string {
-  const ext = (src.split(".",).pop() ?? "").toLowerCase();
+  const clean = src.split(/[?#]/,)[0] ?? src;
+  const ext = (clean.split(".",).pop() ?? "").toLowerCase();
   switch (ext) {
     case "svg":
       return "image/svg+xml";
@@ -90,6 +91,12 @@ export function renderIndexHtml(
   const lang = escapeHtml(config.seo?.lang ?? "en",);
   const head = buildHead(config, opts,);
   const bodyClass = escapeHtml(themeBodyClass(config.theme,),);
+  // The preset CSS is a real static file next to the page (buildit copies
+  // `themes/`), so link it directly: the <noscript> fallback and the first
+  // paint are styled before entry.ts inlines the runtime token overrides.
+  const presetLink = config.theme.preset
+    ? `<link rel="stylesheet" href="./${escapeHtml(config.theme.preset,)}.css">`
+    : "";
   return `<!DOCTYPE html>
 <html lang="${lang}">
   <head>
@@ -100,6 +107,7 @@ export function renderIndexHtml(
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="${BEER_CSS}">
     <link rel="stylesheet" href="${MATERIAL_ICONS}">
+    ${presetLink}
     <script type="module" src="${BEER_JS}"></script>
   </head>
   <body class="${bodyClass}">
@@ -135,7 +143,7 @@ export function renderManifest(config: LinklistConfig,): string {
     type: "image/svg+xml",
     purpose: "any maskable",
   },);
-  const manifest = {
+  const manifest: Record<string, unknown> = {
     name: seo?.title ?? profile.name,
     short_name: profile.name,
     description: seo?.description ?? profile.tagline ??
@@ -143,20 +151,26 @@ export function renderManifest(config: LinklistConfig,): string {
     start_url: "./",
     scope: "./",
     display: "standalone",
-    background_color: theme.custom?.background_color ?? "#ffffff",
+    // Only declare a background when the config sets one: guessing "#ffffff"
+    // would flash a white PWA splash behind a dark preset.
     theme_color: themeColorValue,
     icons,
   };
+  if (theme.custom?.background_color) {
+    manifest.background_color = theme.custom.background_color;
+  }
   return `${JSON.stringify(manifest, undefined, 2,)}\n`;
 }
 
 /**
- * Render `robots.txt`. Privacy-first default: allow every crawler. A sitemap is
- * only referenced when a canonical URL is configured (a hosted sitemap is a
- * future concern, so by default this stays a plain allow-all).
+ * Render `robots.txt`. Privacy-first default: a plain allow-all crawler policy.
+ * The page is a single document with no hosted sitemap yet, so none is
+ * referenced; note that on a GitHub Pages *project* subfolder crawlers do not
+ * even fetch `robots.txt` (it is only honored at a domain root), which is
+ * harmless for an allow-all file.
  */
 export function renderRobotsTxt(
-  config: LinklistConfig,
+  _config: LinklistConfig,
   _opts: { baseUrl?: string } = {},
 ): string {
   return `User-agent: *\nAllow: /\n`;

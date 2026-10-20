@@ -1,0 +1,68 @@
+name: Publish to JSR
+
+# Publishes @vanaware/linklist (packages/core) to JSR.
+#
+# packages/core is publish-ENABLED ("publish": { include/exclude }) and every
+# gate passes locally: tests, `deno task lint:doc` (0 errors),
+# packages/core/README.md, and `deno publish --dry-run`. A release happens when
+# a v*.* tag is pushed (or workflow_dispatch). The build-stamped version is
+# sanitized below before publishing — never paper over failures with
+# --allow-dirty.
+#
+# NOTE: `deno publish` must run INSIDE packages/core — the workspace root
+# deno.jsonc has no "name" field and errors out otherwise.
+
+on:
+  push:
+    tags:
+      - "v*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # JSR provenance attestation
+
+concurrency:
+  group: jsr-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version-file: .tool-versions
+          cache: true
+
+      - name: Install dependencies
+        run: deno ci
+
+      - name: Verify code integrity
+        run: deno task tests
+
+      - name: Lint JSDoc (publish gate)
+        # JSR rule #1/#2: every exported symbol must be documented.
+        run: deno task lint:doc
+
+      - name: Sanitize version
+        # Strips the build-stamp suffix (e.g. "0.1.19#mvftz59i") from the
+        # "version" field, leaving strict semver, which JSR requires.
+        run: deno task sanitize-version ./packages/core/deno.jsonc
+
+      - name: Check package README exists
+        # JSR rule #3: the package root needs a README with a runnable import
+        # example. Fail early with a readable message instead of a cryptic one.
+        run: test -f packages/core/README.md && grep -q "@vanaware/linklist" packages/core/README.md
+
+      - name: Dry-run publish
+        working-directory: packages/core
+        run: deno publish --dry-run --allow-slow-types
+
+      - name: Publish @vanaware/linklist to JSR
+        working-directory: packages/core
+        run: deno publish --allow-slow-types

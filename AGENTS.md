@@ -26,11 +26,12 @@ commit messages are written in **English**. No exceptions.
 - **Validation**: config is validated with **ArkType** (type-first, via `npm:`).
 - **JSR Publication (deferred)**: only `@vanaware/linklist` is ever a publication
   candidate; `@vanaware/linklist-server` is a dev-only static server and must stay
-  `publish: false` permanently. The packages are currently `publish: false` and the
-  `jsr-publish.yml` workflow has been removed. When core is ready to publish, keep
-  it JSR-clean anyway (complete JSDoc, valid `deno doc --lint`, README with an
-  executable example per `docs/publish-jsr-rules.md`) and re-add a publish workflow
-  scoped to `packages/core` only.
+  `publish: false` permanently. Core is currently `publish: false`. The
+  `.github/workflows/jsr-publish.yml` workflow is re-added as a release GATE: it
+  runs `deno task lint:doc` and requires `packages/core/README.md`, so it fails
+  today by design. Keep core JSR-clean anyway (complete JSDoc, valid
+  `deno doc --lint`, README with an executable example per
+  `docs/publish-jsr-rules.md`) and only then flip `publish: true`.
 - **Bundling**: build with `@vanaware/buildit` (`deno task esbuild` / `denobuild`),
   emitting the static site into the server `build/dist/` directory.
 
@@ -44,13 +45,13 @@ commit messages are written in **English**. No exceptions.
 - **Components**: keep UI modularized in `packages/core/src/components/`. There are no
   islands / `hydrateIslands()` — the page is a single client-rendered Preact tree.
 - **Everything in core**: the theme engine (`core/src/lib/theme.ts`), the plugin engine
-  (`core/src/plugin.ts`) and the built-in plugins (`core/src/plugins/`) all live in
+  (`core/src/plugins/engine.ts`) and the built-in plugins (`core/src/plugins/`) all live in
   `packages/core`, alongside the CSS presets in `packages/core/themes`. There is no
   separate themes or plugins package, and no runtime third-party `theme.script` /
   `plugins.scripts` until the engine is stable.
 - **Markdown for user text**: end-user text (bio / about / section copy, link
   subtitle, footer) is authored as **Markdown** and rendered by the self-contained
-  GFM → Preact VNode renderer in `core/src/markdown.ts` (`renderMarkdown` /
+  GFM → Preact VNode renderer in `core/src/components/markdown.ts` (`renderMarkdown` /
   `renderInlineMarkdown`; raw HTML is dropped for XSS safety). Prefer Markdown for
   rich, editable copy.
 

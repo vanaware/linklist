@@ -1,10 +1,12 @@
-# Publishing a library to JSR (deferred)
+# Publishing a library to JSR
 
-> **Status: publishing is currently deferred.** Both workspace packages are set to
-> `"publish": false`, and the automated `.github/workflows/jsr-publish.yml` has been
-> **removed**. `@vanaware/linklist` is consumed from source in the monorepo. This
-> document describes the rules to follow **when** library publication is re-enabled. Do not
-> add a publish workflow until these are satisfied.
+> **Status: ready to publish.** `packages/core` is publish-enabled via a
+> `"publish": { "include", "exclude" }` block (src + README + dist + public +
+> schema + themes ship; tests are excluded). `.github/workflows/jsr-publish.yml`
+> is the release **gate**: tests → `deno task lint:doc` → version sanitizing →
+> README check → publish dry-run → publish, triggered by a `v*.*` tag. All steps
+> pass locally as of the M6b/M6c audits. Do not weaken the workflow (e.g.
+> `--allow-dirty`) to make it pass — fix the underlying gaps instead.
 
 ## Which packages are libraries
 
@@ -15,23 +17,23 @@
   development preview and tests. It is **never** published: it is a dev aid, not a
   library, and must stay `"publish": false` permanently.
 
-Before publishing, set `"publish": true` (and a `name`/`exports` map) in
-`packages/core/deno.jsonc` — and only there; the server package is excluded from
-publishing by design — and re-add a publish workflow gated on the package being
-`publish`-ready.
+Publishing ships exactly what the `"publish".include` list names — keep it in
+sync when the package layout changes. `deno publish` runs INSIDE
+`packages/core` (the workflow sets `working-directory`): from the workspace root
+it fails outright because the root `deno.jsonc` carries no `name` field.
 
-## Hard requirements (checked in CI when publishing is on)
+## Hard requirements (enforced by the jsr-publish workflow)
 
 1. **Complete JSDoc** on every exported symbol: a `@file`/`@description` header, plus
    `@param`/`@returns` and at least one `@example` for non-trivial functions.
 2. **Doc lint passes**:
 
    ```bash
-   deno task lint:doc     # runs `deno doc --lint` over the publishable packages
+   deno task lint:doc     # runs `deno doc --lint packages/core/src/mod.ts`
    ```
 
-   (Add this task back alongside the publish workflow; the whole `tests` composite stays
-   green without it today.)
+   The workflow runs this as a publish gate; keep it out of the `tests` composite
+   until the surface is fully documented.
 3. **Runnable README** at the package root with an executable import example, e.g.:
 
    ```ts
@@ -50,7 +52,7 @@ publishing by design — and re-add a publish workflow gated on the package bein
 ## Release checklist (when enabled)
 
 - [ ] `deno task tests` is green (check + lint + fmt + tests).
-- [ ] `deno doc --lint` clean for every package marked `publish`.
+- [ ] `deno task lint:doc` clean for every package marked `publish`.
 - [ ] Each published package README has an example that actually runs against the published
       types.
-- [ ] Version bumped and tagged `v*.*`.
+- [ ] Version sanitized to strict semver (`deno task sanitize-version`) and tagged `v*.*`.

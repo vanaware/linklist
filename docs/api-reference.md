@@ -1,10 +1,10 @@
 # API reference — `@vanaware/linklist`
 
 The public surface is re-exported from `packages/core/src/mod.ts`. Core is **pure**: the
-engine (`lib/` + `components/`) performs no filesystem or network access — it returns
-types, strings and VNodes. Side effects live only at two edges: the **browser entry**
-(`entry.ts`, bundled into `linklist.js`, *not* exported) and the **CLI** (`cli.ts`,
-exported as command objects that never run on import).
+public engine (`lib/` + `plugins/` + `cli.ts` pieces) performs no filesystem or network
+access — it returns types, strings and command objects. Side effects live only at two
+edges: the **browser entry** (`entry.ts`, bundled into `linklist.js`, *not* exported) and
+the **CLI writers** (`cli.ts`, exported as command objects that never run on import).
 
 ### Why `mod.ts` and the bundled `linklist.js` are two surfaces
 
@@ -19,13 +19,18 @@ embedding in your own tooling or the future SaaS tier:
 | Loaded by | `index.html` (the static site) | your code (`import` / JSR) |
 | Side effects on import | starts the app | none |
 | I/O | fetches `./config.json`, presets | caller supplies everything |
-| Use when | you host the ready-made page | you drive rendering yourself |
+| Use when | you host the ready-made page | you validate, generate or script yourself |
 
-Import everything from the package root:
+Import from the package root:
 
 ```ts
-import { validateConfig, renderMarkdown, App } from "@vanaware/linklist";
+import { parseAndValidate, generateSite, linklistCommand } from "@vanaware/linklist";
 ```
+
+The Preact runtime (`components/`, `markdown.ts`, `state.ts`) and the raw ArkType
+`configType` are **internal** — they are not re-exported from `mod.ts` because npm
+type graphs (preact/signals/arktype) cannot pass JSR doc-lint as a public surface.
+Consume them through the bundle or monorepo deep imports (see the sections below).
 
 ---
 
@@ -47,7 +52,8 @@ Described in full in the [Configuration reference](configuration.md).
 Built on ArkType plus semantic cross-field checks. Pure — no I/O.
 
 ```ts
-const configType: ArkType            // the structural type for LinklistConfig
+// internal (arktype is an npm dependency; `configType` is not JSR-public)
+const configType: Type<LinklistConfig>
 
 function validateConfig(raw: unknown): ValidationResult
 function parseAndValidate(jsonText: string): ValidationResult
@@ -64,12 +70,14 @@ already-parsed object.
 ```ts
 const result = parseAndValidate(await Deno.readTextFile("config.json"));
 if (!result.ok) console.error(result.errors);
-else render(result.data);
+else generateSite(result.data);      // or your own consumer
 ```
 
 ---
 
-## Markdown (`components/markdown.ts`)
+## Markdown (`components/markdown.ts`) — internal
+
+Not exported from `mod.ts` (npm type graph). Inside the bundle / monorepo:
 
 CommonMark + GFM (tables, strikethrough, task lists) rendered straight to Preact VNodes.
 Raw HTML is dropped, so output is XSS-safe. Used for `bio`, `tagline`, section bodies,
@@ -82,10 +90,10 @@ function renderInlineMarkdown(markdown: string): ComponentChildren  // inline on
 
 ---
 
-## Reactive state (`components/state.ts`)
+## Reactive state (`components/state.ts`) — internal
 
-Central store on `@preact/signals` (the project forbids `useState`/`useEffect` for global
-state).
+Not exported from `mod.ts` (npm type graph). Central store on `@preact/signals`
+(the project forbids `useState`/`useEffect` for global state).
 
 ```ts
 export { computed, signal } from "@preact/signals"
@@ -98,9 +106,10 @@ const themeSignal:  Computed<string>                // preset name (defaults "mi
 
 ---
 
-## Components (`components/*`)
+## Components (`components/*`) — internal
 
-Preact + `htm/preact` functions, styled with BeerCSS semantic classes. They read from the
+Not exported from `mod.ts` (npm type graph); they run inside `linklist.js`. Preact +
+`htm/preact` functions, styled with BeerCSS semantic classes. They read from the
 signals above (or explicit props where noted).
 
 | Export | Notes |
@@ -114,9 +123,9 @@ signals above (or explicit props where noted).
 | `Footer` | Last-updated / custom footer line with the build version stamp. |
 
 ```ts
-import { h, render } from "preact";
-import { App, setConfig } from "@vanaware/linklist";
-setConfig(validConfig);                     // optional: also drives the signals
+// monorepo deep import only — not part of the JSR surface
+import { h, render } from "npm:preact";
+import { App } from "./packages/core/src/components/App.ts";
 render(h(App, { config: validConfig }), document.getElementById("app"));
 ```
 
@@ -147,7 +156,7 @@ scrapers read it without JavaScript. The SaaS tier reuses these verbatim.
 
 ```ts
 function buildHead(config: LinklistConfig, opts?: { baseUrl?: string }): string  // <title>+meta+link+JSON-LD
-function buildJsonLd(config: LinklistConfig): Record<string, unknown>            // schema.org Person
+function buildJsonLd(config: LinklistConfig, base?: string): Record<string, unknown>  // schema.org Person
 function faviconDataUri(name: string, color: string): string                    // inline SVG initial tile
 function escapeHtml(value: string): string
 function safeJson(value: unknown): string                                        // escapes "<"
@@ -175,10 +184,12 @@ function generateSite(config, opts?: { baseUrl?: string }): GeneratedFile[]  // 
 ## CLI (`cli.ts`)
 
 A Cliffy program (`linklistCommand`) with `build` and `validate` subcommands, exported
-as command objects — importing never runs them. `build` writes `generateSite` output into
-the public folder (defaults `--config packages/core/public/config.json`,
-`--out packages/core/public`); `validate` replaces the former `scripts/validate.ts`.
-Drive them with `deno task linklist:build` and `deno task validate-config <path>`.
+as the root command object plus `buildSiteFiles` — importing never runs anything.
+`build` writes `generateSite` output into the public folder (defaults `--config
+packages/core/public/config.json`, `--out packages/core/public`); `validate` replaces the
+former `scripts/validate.ts` and defaults to the same config path. Reach subcommands via
+`linklistCommand.getCommand("build")` if needed. Drive them with `deno task linklist:build`
+and `deno task validate-config [path]`.
 
 ```ts
 async function buildSiteFiles(config, outDir: string, opts?: { baseUrl?: string }): Promise<string[]>

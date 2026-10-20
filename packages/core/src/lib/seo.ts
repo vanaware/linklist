@@ -41,16 +41,24 @@ function absoluteUrl(
   }
 }
 
-/** Build a `Person` JSON-LD document (name + avatar + `sameAs` profile links). */
-export function buildJsonLd(config: LinklistConfig,): Record<string, unknown> {
-  const base = config.seo?.url ?? "";
+/**
+ * Build a `Person` JSON-LD document (name + avatar + `sameAs` profile links).
+ * `base` (e.g. the CLI `--base-url`) resolves relative avatar/url values and
+ * doubles as the profile URL when `seo.url` is not configured — keeping the
+ * structured data consistent with the OG tags in {@linkcode buildHead}.
+ */
+export function buildJsonLd(
+  config: LinklistConfig,
+  base?: string,
+): Record<string, unknown> {
+  const root = base ?? config.seo?.url ?? "";
   const entry: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: config.profile.name,
   };
-  const url = absoluteUrl(config.seo?.url, base,);
-  const image = absoluteUrl(config.profile.avatar, base,);
+  const url = absoluteUrl(config.seo?.url ?? (root || undefined), root,);
+  const image = absoluteUrl(config.profile.avatar, root,);
   if (url) entry.url = url;
   if (image) entry.image = image;
   if (config.profile.tagline) entry.description = config.profile.tagline;
@@ -61,9 +69,12 @@ export function buildJsonLd(config: LinklistConfig,): Record<string, unknown> {
 
 /** Generate a favicon data-URI (a colored tile with the name's initial). */
 export function faviconDataUri(name: string, color: string,): string {
+  // Colors reach the SVG `fill` attribute unescaped, so only trust plain
+  // hex; anything else falls back to the default Material primary.
+  const safeColor = /^#([0-9a-fA-F]{3,8})$/.test(color,) ? color : "#6750a4";
   const letter = escapeHtml((name.trim()[0] ?? "?").toUpperCase(),);
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="${color}"/><text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="system-ui,sans-serif" font-size="58" fill="#ffffff">${letter}</text></svg>`;
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="${safeColor}"/><text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="system-ui,sans-serif" font-size="58" fill="#ffffff">${letter}</text></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg,)}`;
 }
 
@@ -76,7 +87,7 @@ export function buildHead(
   const base = opts.baseUrl ?? seo?.url ?? "";
   const title = seo?.title ?? profile.name;
   const description = seo?.description ?? profile.tagline ?? "";
-  const url = absoluteUrl(seo?.url, base,);
+  const url = absoluteUrl(seo?.url ?? (opts.baseUrl || undefined), base,);
   const image = absoluteUrl(seo?.image ?? profile.avatar, base,);
   const favicon = seo?.favicon
     ? absoluteUrl(seo.favicon, base,)
@@ -111,7 +122,7 @@ export function buildHead(
   lines.push(`<link rel="icon" href="${escapeHtml(favicon ?? "",)}">`,);
   lines.push(
     `<script type="application/ld+json">${
-      safeJson(buildJsonLd(config,),)
+      safeJson(buildJsonLd(config, base,),)
     }</script>`,
   );
   return lines.join("\n    ",);
