@@ -12,6 +12,7 @@
  * server `main.ts` can stream the very same strings to a response.
  */
 import { buildHead, escapeHtml, faviconDataUri, } from "./seo.ts";
+import { brandText, } from "./brand.ts";
 import { themeBodyClass, themeColor, } from "./theme.ts";
 import type { LinklistConfig, } from "./types.ts";
 
@@ -52,28 +53,38 @@ function iconType(src: string,): string {
 
 /**
  * A no-JS fallback rendered straight from the config: the profile name, an
- * optional avatar/tagline and every link as a plain anchor. It lives inside
- * `<noscript>` so JavaScript users never see it, while crawlers, disabled-JS
- * visitors and the PWA splash still get real content.
+ * optional avatar/tagline and every link block as a plain anchor. Text/figure
+ * blocks and plugin anchors are skipped (Markdown source has no place without
+ * JS, plugin data is fetched at runtime anyway). It closes with the same
+ * "Made with linklist" brand line the live footer always shows (the version is
+ * the **package** version passed in at build). It lives inside `<noscript>`
+ * so JavaScript users never see it, while crawlers, disabled-JS visitors and the
+ * PWA splash still get real content.
  */
-function noScriptFallback(config: LinklistConfig,): string {
-  const { profile, links, } = config;
-  const avatar = profile.avatar
-    ? `<img src="${escapeHtml(profile.avatar,)}" alt="${
-      escapeHtml(profile.avatar_alt ?? "",)
+function noScriptFallback(config: LinklistConfig, version: string,): string {
+  const { profile, } = config;
+  const hidden = new Set(profile.hide ?? [],);
+  const avatar = profile.avatar && !hidden.has("avatar",)
+    ? `<img src="${escapeHtml(profile.avatar,)}" alt="${escapeHtml(profile.avatar_alt ?? "",)
     }" width="96" height="96">`
     : "";
-  const tagline = profile.tagline
+  const tagline = profile.tagline && !hidden.has("tagline",)
     ? `<p>${escapeHtml(profile.tagline,)}</p>`
     : "";
-  const items = links.map((link,) =>
-    `<li><a href="${escapeHtml(link.url,)}">${escapeHtml(link.title,)}</a></li>`
-  ).join("",);
+  const links = config.blocks.filter((block,) => block.type === "link");
+  const list = links.length === 0
+    ? ""
+    : `<nav><ul>${links.map((block,) =>
+      `<li><a href="${escapeHtml(block.link.url,)}">${escapeHtml(block.link.title,)
+      }</a></li>`
+    ).join("",)
+    }</ul></nav>`;
   return [
     `<main class="linklist">`,
     `${avatar}<h1>${escapeHtml(profile.name,)}</h1>${tagline}`,
-    `<nav><ul>${items}</ul></nav>`,
+    `${list}`,
     `<p>Enable JavaScript to load the full styled page.</p>`,
+    `<footer class="footer">${escapeHtml(brandText(version,),)}</footer>`,
     `</main>`,
   ].join("",);
 }
@@ -86,9 +97,9 @@ function noScriptFallback(config: LinklistConfig,): string {
  */
 export function renderIndexHtml(
   config: LinklistConfig,
-  opts: { baseUrl?: string } = {},
+  opts: { baseUrl?: string; version?: string } = {},
 ): string {
-  const lang = escapeHtml(config.seo?.lang ?? "en",);
+  const lang = escapeHtml(config.profile.lang ?? "en",);
   const head = buildHead(config, opts,);
   const bodyClass = escapeHtml(themeBodyClass(config.theme,),);
   // The preset CSS is a real static file next to the page (buildit copies
@@ -112,7 +123,7 @@ export function renderIndexHtml(
   </head>
   <body class="${bodyClass}">
     <div id="app">
-      <noscript>${noScriptFallback(config,)}</noscript>
+      <noscript>${noScriptFallback(config, opts.version ?? "",)}</noscript>
     </div>
     <script type="module" src="./linklist.js"></script>
   </body>
@@ -126,7 +137,7 @@ export function renderIndexHtml(
  * the installed app uses the real profile art.
  */
 export function renderManifest(config: LinklistConfig,): string {
-  const { profile, theme, seo, } = config;
+  const { profile, theme, } = config;
   const themeColorValue = themeColor(theme,);
   const icons: Array<Record<string, string>> = [];
   if (profile.avatar) {
@@ -144,9 +155,9 @@ export function renderManifest(config: LinklistConfig,): string {
     purpose: "any maskable",
   },);
   const manifest: Record<string, unknown> = {
-    name: seo?.title ?? profile.name,
+    name: profile.title ?? profile.name,
     short_name: profile.name,
-    description: seo?.description ?? profile.tagline ??
+    description: profile.description ?? profile.tagline ??
       "A fast, private link-in-bio page.",
     start_url: "./",
     scope: "./",
@@ -179,7 +190,7 @@ export function renderRobotsTxt(
 /** Generate every static file derived from the config, in a stable order. */
 export function generateSite(
   config: LinklistConfig,
-  opts: { baseUrl?: string } = {},
+  opts: { baseUrl?: string; version?: string } = {},
 ): GeneratedFile[] {
   return [
     { name: "index.html", content: renderIndexHtml(config, opts,), },

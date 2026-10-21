@@ -1,76 +1,131 @@
 /**
  * @file plugin_test.ts
- * @description Unit tests for the build-time plugin orchestration in core:
- * `runPlugins` isolates failures, and `mergePluginOutputs` appends contributions
- * without mutating the base config.
+ * @description Unit tests for block expansion in core. `resolveBlocks` runs each
+ * `plugin` block's expander with its own `repos` and splices the produced blocks
+ * back in place — preserving order, dropping empty/unknown anchors, and never
+ * mutating the base config.
  */
-import { assertEquals, assertStringIncludes, } from "@std/assert";
+import { assertEquals, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
-import { mergePluginOutputs, runPlugins, } from "../src/plugins/engine.ts";
-import type {
-  LinklistConfig,
-  LinklistPlugin,
-  PluginContext,
-} from "../src/mod.ts";
+import { resolveBlocks, } from "../src/plugins/engine.ts";
+import type { BlockExpander, PluginContext, } from "../src/plugins/engine.ts";
+import type { Block, LinklistConfig, } from "../src/lib/types.ts";
 
-const config: LinklistConfig = {
-  profile: { name: "Jane", bio: "hi", },
-  links: [{ title: "Blog", url: "https://example.com", },],
-  theme: { preset: "minimal-dark", },
+const ctx: PluginContext = {
+  fetchJson: () => Promise.resolve({},),
+  warn: () => {},
 };
 
-function ctx(overrides: Partial<PluginContext> = {},): PluginContext {
+function linkBlock(title: string,): Block {
   return {
-    config,
-    fetchJson: () => Promise.resolve({},),
-    warn: () => {},
-    ...overrides,
+    type: "link",
+    format: "row",
+    link: { title, url: `https://${title}.test`, },
   };
 }
 
-describe("runPlugins", () => {
-  it("collects an output from every plugin", async () => {
-    const a: LinklistPlugin = {
+function configWith(blocks: Block[],): LinklistConfig {
+  return {
+    profile: { name: "Jane", },
+    blocks,
+    theme: { preset: "minimal-dark", },
+  };
+}
+
+describe("resolveBlocks", () => {
+  it("expands a plugin block in place via its expander", async () => {
+    const expander: BlockExpander = {
       name: "a",
-      run: () =>
-        Promise.resolve({ links: [{ title: "A", url: "https://a.test", },], },),
+      expand: (repos,) =>
+        Promise.resolve(repos.length ? [linkBlock("X",),] : [],),
     };
-    const b: LinklistPlugin = {
-      name: "b",
-      run: () => Promise.resolve({ sections: [{ title: "S", body: "s", },], },),
-    };
-    const outputs = await runPlugins([a, b,], ctx(),);
-    assertEquals(outputs.length, 2,);
-  });
-
-  it("isolates failures: a throwing plugin is skipped with a warning", async () => {
-    const warnings: string[] = [];
-    const boom: LinklistPlugin = {
-      name: "boom",
-      run: () => Promise.reject(new Error("offline",),),
-    };
-    const ok: LinklistPlugin = {
-      name: "ok",
-      run: () =>
-        Promise.resolve({ links: [{ title: "K", url: "https://k.test", },], },),
-    };
-    const outputs = await runPlugins(
-      [boom, ok,],
-      ctx({ warn: (m,) => warnings.push(m,), },),
-    );
-    assertEquals(outputs.length, 1,);
-    assertEquals(warnings.length, 1,);
-    assertStringIncludes(warnings[0]!, "boom skipped",);
-  });
-});
-
-describe("mergePluginOutputs", () => {
-  it("appends links and sections without mutating the original", () => {
-    const merged = mergePluginOutputs(config, [
-      { links: [{ title: "X", url: "https://x.test", },], },
+    const config = configWith([
+      linkBlock("Blog",),
+      { type: "plugin", name: "a", repos: ["o/r",], },
     ],);
-    assertEquals(merged.links.length, 2,);
-    assertEquals(config.links.length, 1,); // original untouched
-    assertEquals(merged.sections, [],);
+    const resolved = await resolveBlocks(config, ctx, [expander,],);
+    assertEquals(resolved.map((b,) => b.type), ["link", "link",],);
+    // original config untouched
+    assertEquals(config.blocks.length, 2,);
+  });
+
+  it("splices links then section blocks the expander returns, in order", async () => {
+    const expander: BlockExpander = {
+      name: "a",
+      expand: () =>
+        Promise.resolve([
+          linkBlock("X",),
+          { type: "section", title: "S", body: "s", },
+        ],),
+    };
+    const config = configWith([
+      linkBlock("First",),
+      { type: "plugin", name: "a", repos: ["o/r",], },
+    ],);
+    const resolved = await resolveBlocks(config, ctx, [expander,],);
+    assertEquals(resolved.map((b,) => b.type), ["link", "link", "section",],);
+  });
+
+  it("drops a plugin block with empty repos (expander never runs)", async () => {
+    let ran = false;
+    const expander: BlockExpander = {
+      name: "a",
+      expand: () => {
+        ran = true;
+        return Promise.resolve([linkBlock("X",),],);
+      },
+    };
+    const config = configWith([
+      linkBlock("Blog",),
+      { type: "plugin", name: "a", repos: [], },
+    ],);
+    const resolved = await resolveBlocks(config, ctx, [expander,],);
+    assertEquals(ran, false,);
+    assertEquals(resolved.length, 1,);
+    assertEquals(resolved[0]!.type, "link",);
+  });
+
+  it("drops a plugin block whose name has no expander", async () => {
+    const config = configWith([
+      { type: "plugin", name: "unknown", repos: ["o/r",], },
+    ],);
+    const resolved = await resolveBlocks(config, ctx, [],);
+    assertEquals(resolved.length, 0,);
+  });
+
+  it("preserves the relative order and expands multiple blocks", async () => {
+    const p: BlockExpander = {
+      name: "p",
+      expand: () =>
+        Promise.resolve([{
+          type: "section",
+          title: "From plugin",
+          body: "b",
+        },],),
+    };
+    const config = configWith([
+      { type: "section", title: "Intro", },
+      { type: "plugin", name: "p", repos: ["o/r",], },
+      linkBlock("L",),
+      { type: "plugin", name: "gone", repos: [], },
+    ],);
+    const resolved = await resolveBlocks(config, ctx, [p,],);
+    const shapes = resolved.map((b,) => {
+      if (b.type === "link") return `link:${b.link.title}`;
+      if (b.type === "section") return `section:${b.title}`;
+      if (b.type === "plugin") return `plugin:${b.name}`;
+      return b.type;
+    },);
+    assertEquals(shapes, ["section:Intro", "section:From plugin", "link:L",],);
+  });
+
+  it("passes non-plugin blocks through untouched", async () => {
+    const blocks: Block[] = [
+      linkBlock("Blog",),
+      { type: "section", title: "S", body: "b", },
+      { type: "image", image: "./a.svg", image_alt: "A", },
+    ];
+    const resolved = await resolveBlocks(configWith(blocks,), ctx, [],);
+    assertEquals(resolved, blocks,);
   });
 });

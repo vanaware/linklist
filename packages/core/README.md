@@ -12,15 +12,15 @@ plain data structure you can run anywhere Deno or the browser runs.
 
 ## What's inside
 
-| Area         | Exports                                                                                                                                         |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Config types | `LinklistConfig`, `Profile`, `LinkItem`, `ThemeConfig`, `ThemeTokens`, `SeoConfig`, `AnalyticsConfig`, `PluginsConfig`, `ContentSection`        |
-| Validation   | `parseAndValidate`, `validateConfig` (+ `ValidationResult` types)                                                                               |
-| Theme        | `resolveThemeCss`, `tokensToCss`, `themeColor`, `themeBodyClass`, `presetVariable`, `readableInk`, `readableLink`                               |
-| SEO head     | `buildHead`, `buildJsonLd`, `faviconDataUri`, `escapeHtml`, `safeJson`                                                                          |
-| Static files | `generateSite`, `renderIndexHtml`, `renderManifest`, `renderRobotsTxt` — config → `index.html` / `manifest.json` / `robots.txt` text            |
-| Plugins      | `LinklistPlugin` contract, `runPlugins`, `mergePluginOutputs`, `builtinPlugins` (`githubReposPlugin`)                                           |
-| CLI          | `linklistCommand` (Cliffy: `linklist build` / `linklist validate`), `buildSiteFiles` — importable command objects; parsing never runs on import |
+| Area         | Exports                                                                                                                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Config types | `LinklistConfig`, `Profile`, `ProfileField`, `LinkItem`, `Block` (`LinkBlock`/`SectionBlock`/`ImageBlock`/`PluginBlock`), `BlockFormat`, `FooterConfig`, `ThemeConfig`, `ThemeTokens`, `ContentSection` |
+| Validation   | `parseAndValidate`, `validateConfig` (+ `ValidationResult` types) — builds each block's shape from its `format`                                                                                         |
+| Theme        | `resolveThemeCss`, `tokensToCss`, `themeColor`, `themeBodyClass`, `presetVariable`, `readableInk`, `readableLink`                                                                                       |
+| SEO head     | `buildHead`, `buildJsonLd`, `faviconDataUri`, `escapeHtml`, `safeJson`                                                                                                                                  |
+| Static files | `generateSite`, `renderIndexHtml`, `renderManifest`, `renderRobotsTxt` — config → `index.html` / `manifest.json` / `robots.txt` text                                                                    |
+| Plugins      | `BlockExpander` contract, `resolveBlocks`, `builtinExpanders` (`githubReposExpander`), `PluginContext`                                                                                                  |
+| CLI          | `linklistCommand` (Cliffy: `linklist build` / `linklist validate`), `buildSiteFiles` — importable command objects; parsing never runs on import                                                         |
 
 The Preact rendering runtime (`components/`, `markdown.ts`, `state.ts`) is
 intentionally **not** part of the public JSR surface — consume it through the
@@ -35,7 +35,9 @@ import { generateSite, parseAndValidate, } from "@vanaware/linklist";
 
 const raw = `{
   "profile": { "name": "Ada", "tagline": "Mathematician" },
-  "links": [{ "title": "GitHub", "url": "https://github.com/ada" }],
+  "blocks": [
+    { "format": "row", "title": "GitHub", "url": "https://github.com/ada" }
+  ],
   "theme": { "preset": "minimal-dark" }
 }`;
 
@@ -61,14 +63,21 @@ A linklist site is one JSON file. Minimum viable config:
 ```json
 {
   "profile": { "name": "Ada", "tagline": "Mathematician" },
-  "links": [{ "title": "GitHub", "url": "https://github.com/ada" }],
+  "blocks": [
+    { "format": "row", "title": "GitHub", "url": "https://github.com/ada" }
+  ],
   "theme": { "preset": "minimal-dark" }
 }
 ```
 
-Everything else is optional: SEO/social metadata (`seo`), privacy-first
-analytics (`analytics`), build/runtime data plugins (`plugins`), Markdown
-content sections (`content`), and token-level theme overrides (`theme.custom`).
+`blocks` is the page in declared order. Every block is a **pure, self-contained item**
+naming one predefined `format`: `row`/`button`/`card` (a link, needs `title`+`url`),
+`text` (a Markdown section), `figure` (a standalone image) or `repos` (the GitHub plugin),
+interleaved freely. Everything
+else is optional: which profile fields show on screen (`profile.hide`), per-link thumbnails
+(`image`/`image_alt`), head/social metadata as `profile` overrides (`title`/`description`/
+`image`/`url`/`twitter`/`lang`/`favicon`), a footer line (`footer`), and token-level theme
+overrides (`theme.custom`).
 The JSON Schema for editors and CI lives at `schema/config.schema.json`
 (referenced from your config via `"$schema"`).
 

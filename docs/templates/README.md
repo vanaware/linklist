@@ -4,8 +4,8 @@ Starting points for your `config.json`. Copy one, edit it, validate it, build.
 
 | File | What it is |
 | --- | --- |
-| `minimal.config.json` | A bare-bones, valid page: a name, one link, one theme preset, basic SEO. |
-| [`../../packages/core/public/config.json`](../../packages/core/public/config.json) | The fully-annotated reference: profile, avatar, sections, plugins, tokens, analytics. |
+| `minimal.config.json` | A bare-bones, valid page: a name, one `row` link block, one theme preset. |
+| [`../../packages/core/public/config.json`](../../packages/core/public/config.json) | The fully-annotated reference: profile (identity + head metadata), avatar, ordered `blocks` each naming a `format` (a `button` link, a `card` link, a `text` section, a `row` link, a `figure`, a `repos` plugin block), tokens, footer. |
 
 ```bash
 cp docs/templates/minimal.config.json site/config.json

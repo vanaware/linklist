@@ -1,18 +1,18 @@
 /**
  * @file plugins_test.ts
- * @description Sanity checks for core's built-in plugin registry: the
- * `github-repos` plugin ships with the engine and is the sole default entry.
+ * @description Sanity checks for core's built-in expander registry: the
+ * `github-repos` expander ships with the engine and is the sole default entry.
  */
 import { assert, assertEquals, } from "@std/assert";
 import { describe, it, } from "@std/testing/bdd";
-import { builtinPlugins, githubReposPlugin, } from "../src/plugins/mod.ts";
+import { builtinExpanders, githubReposExpander, } from "../src/plugins/mod.ts";
 
-describe("builtinPlugins", () => {
-  it("includes the github-repos plugin", () => {
-    assert(builtinPlugins.includes(githubReposPlugin,),);
+describe("builtinExpanders", () => {
+  it("includes the github-repos expander", () => {
+    assert(builtinExpanders.includes(githubReposExpander,),);
   });
 
-  it("exposes only the github-repos plugin by default", () => {
-    assertEquals(builtinPlugins.map((p,) => p.name), ["github-repos",],);
+  it("exposes only the github-repos expander by default", () => {
+    assertEquals(builtinExpanders.map((e,) => e.name), ["github-repos",],);
   });
 });

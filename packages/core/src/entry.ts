@@ -3,8 +3,8 @@
  * @description Browser entry point, bundled by buildit into `dist/linklist.js`.
  * It fetches `./config.json` from the static folder at runtime (resolved
  * relative to the document, so it works at a domain root OR under a subfolder),
- * validates it, runs the built-in plugins, applies the theme, and renders the
- * full Preact `App` into `#app`. The document <head> metadata is NOT touched
+ * validates it, resolves the built-in plugin blocks, applies the theme, and
+ * renders the full Preact `App` into `#app`. The document <head> metadata is NOT touched
  * here: it is finalized into `index.html` at build time (before publishing to
  * the static host), so crawlers and link-preview scrapers see it without JS.
  * This file is intentionally NOT exported from `mod.ts` so non-browser code
@@ -12,8 +12,8 @@
  */
 import { h, render, } from "preact";
 import { App, } from "./components/App.ts";
-import { mergePluginOutputs, runPlugins, } from "./plugins/engine.ts";
-import { builtinPlugins, } from "./plugins/mod.ts";
+import { resolveBlocks, } from "./plugins/engine.ts";
+import { builtinExpanders, } from "./plugins/mod.ts";
 import { parseAndValidate, } from "./lib/schema.ts";
 import { setConfig, } from "./components/state.ts";
 import { resolveThemeCss, themeBodyClass, } from "./lib/theme.ts";
@@ -74,41 +74,7 @@ async function applyTheme(config: LinklistConfig,): Promise<void> {
   if (!style.parentNode) doc.head.appendChild(style,);
 }
 
-/**
- * One-time migration cleanup: earlier builds of this site registered a
- * `sw.js` service worker that now serves stale cached pages. The current
- * build ships no service worker, so unregister any leftovers and drop only
- * the caches they own before booting.
- */
-// `ServiceWorkerRegistration.keys()` exists in browsers but is missing from
-// Deno's DOM lib; declare the tiny slice we use.
-interface RegistrationWithKeys extends ServiceWorkerRegistration {
-  readonly keys?: () => Promise<{ cacheNames: string[] }>;
-}
-
-async function purgeStaleServiceWorkers(): Promise<void> {
-  if (!("serviceWorker" in navigator)) return;
-  try {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(
-      registrations.map(async (registration,) => {
-        const reg = registration as RegistrationWithKeys;
-        const keys = reg.keys ? await reg.keys() : undefined;
-        const cacheNames = keys?.cacheNames ?? [];
-        await Promise.all(
-          cacheNames.map((name,) => caches.delete(name,)),
-        );
-        await reg.unregister();
-      },),
-    );
-  } catch {
-    // Best-effort; never block the first paint.
-  }
-}
-
 async function boot(): Promise<void> {
-  purgeStaleServiceWorkers();
-
   const doc = globalThis.document;
   const mount = doc?.getElementById("app",);
   if (!doc || !mount) return;
@@ -140,13 +106,15 @@ async function boot(): Promise<void> {
     return;
   }
 
-  // Built-in plugins, each failure isolated so one bad fetch can't break the page.
-  const outputs = await runPlugins(builtinPlugins, {
-    config: base,
-    fetchJson,
-    warn,
-  },);
-  const config = mergePluginOutputs(base, outputs,);
+  // Built-in plugin expanders run per `plugin` block, each failure isolated so
+  // one bad fetch can't break the page. resolveBlocks splices the produced
+  // links/section blocks back in place, keeping the declared order final.
+  const blocks = await resolveBlocks(
+    base,
+    { fetchJson, warn, },
+    builtinExpanders,
+  );
+  const config = { ...base, blocks, };
 
   setConfig(config,);
   await applyTheme(config,);

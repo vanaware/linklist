@@ -76,19 +76,28 @@ dropped, so the output stays XSS-safe.
 
 ```jsonc
 {
-  "sections": [
-    { "title": "About", "body": "I build **privacy-first** tools.\n\n- Deno\n- Preact", "placement": "after" }
+  "blocks": [
+    { "format": "row", "title": "GitHub", "url": "https://github.com/yourhandle" },
+    { "format": "text", "title": "About", "body": "I build **privacy-first** tools.\n\n- Deno\n- Preact" }
   ]
 }
 ```
 
+Every block is a **pure, self-contained item** that names one predefined `format`. The
+`format` decides both how it renders and which fields it needs: `row`/`button`/`card` are
+link formats (need `title` + `url`), `text` is a Markdown section, `figure` a standalone
+image, and `repos` the GitHub plugin. The order of `blocks` is the order on screen — links,
+sections and figures interleave freely (consecutive link blocks group into one list).
+
 ## 7. Extend with data
 
-Turn on the built-in GitHub plugin to show stars and the latest release of repos you
-maintain:
+Add a `{ "format": "repos" }` block wherever you want the built-in GitHub plugin to show
+stars and the latest release of repos you maintain (the block carries its own data):
 
 ```jsonc
-{ "plugins": { "github_repos": ["vanaware/linklist"] } }
+{
+  "blocks": [ /* … */, { "format": "repos", "repos": ["vanaware/linklist"] } ]
+}
 ```
 
 See [Plugins](plugins.md) for the contract and for loading third-party plugin/theme

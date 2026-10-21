@@ -14,18 +14,26 @@ const config: LinklistConfig = {
     tagline: "Maker",
     avatar: "./assets/avatar.svg",
     avatar_alt: "Jane",
-  },
-  links: [
-    { title: "GitHub", url: "https://github.com/jane", },
-    { title: "Site", url: "https://jane.dev", },
-  ],
-  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
-  seo: {
     title: "Jane — links",
     url: "https://jane.dev/",
     description: "Jane's links",
     lang: "pt",
   },
+  blocks: [
+    {
+      type: "link",
+      format: "row",
+      link: { title: "GitHub", url: "https://github.com/jane", },
+    },
+    {
+      type: "link",
+      format: "row",
+      link: { title: "Site", url: "https://jane.dev", },
+    },
+    { type: "section", title: "About", body: "**secret prose**", },
+    { type: "plugin", name: "github-repos", repos: ["a/b",], },
+  ],
+  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
 };
 
 describe("renderIndexHtml", () => {
@@ -48,6 +56,32 @@ describe("renderIndexHtml", () => {
     assertStringIncludes(html, "<noscript>",);
     assertStringIncludes(html, "https://github.com/jane",);
     assertStringIncludes(html, "https://jane.dev",);
+  });
+  it("bakes the Made with linklist brand into the no-JS fallback", () => {
+    assertStringIncludes(html, "Made with linklist",);
+    const versioned = renderIndexHtml(config, { version: "v9.9.9", },);
+    assertStringIncludes(versioned, "Made with linklist · v9.9.9",);
+  });
+  it("keeps section bodies and plugin anchors out of the fallback", () => {
+    assertStringIncludes(html, "Jane Doe",); // profile header still present
+    assertEquals(html.includes("secret prose",), false,);
+    assertEquals(html.includes("github-repos",), false,);
+  });
+  it("honors profile.hide in the fallback", () => {
+    const hidden: LinklistConfig = {
+      ...config,
+      profile: { ...config.profile, hide: ["tagline", "avatar",], },
+    };
+    // `hide` is screen-only: the noscript body must drop the fields, while
+    // the <head> (og:image / description) keeps publishing the data.
+    const page = renderIndexHtml(hidden,);
+    const noscript = page.slice(
+      page.indexOf("<noscript>",),
+      page.indexOf("</noscript>",),
+    );
+    assertEquals(noscript.includes("Maker",), false,);
+    assertEquals(noscript.includes("avatar.svg",), false,);
+    assertStringIncludes(page.split("</head>",)[0]!, "avatar.svg",);
   });
 });
 

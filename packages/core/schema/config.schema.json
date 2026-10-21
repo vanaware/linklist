@@ -3,8 +3,77 @@
   "$id": "https://vanaware.github.io/linklist/config.schema.json",
   "title": "linklist config",
   "type": "object",
-  "required": ["profile", "links", "theme"],
+  "required": ["profile", "blocks", "theme"],
   "additionalProperties": false,
+  "definitions": {
+    "LinkBlock": {
+      "description": "A single link/CTA. `format` chooses the row / button / card presentation.",
+      "type": "object",
+      "required": ["format", "title", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "enum": ["row", "button", "card"] },
+        "title": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "icon": { "type": "string" },
+        "image": { "type": "string" },
+        "image_alt": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "new_tab": { "type": "boolean" },
+        "nofollow": { "type": "boolean" }
+      },
+      "if": { "required": ["image"] },
+      "then": { "required": ["image_alt"] }
+    },
+    "TextBlock": {
+      "description": "A Markdown content block (`format: \"text\"`).",
+      "type": "object",
+      "required": ["format"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": "text" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "markdown": { "type": "string" }
+      },
+      "anyOf": [{ "required": ["body"] }, { "required": ["markdown"] }]
+    },
+    "FigureBlock": {
+      "description": "A standalone image/figure (`format: \"figure\"`).",
+      "type": "object",
+      "required": ["format", "image", "image_alt"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": "figure" },
+        "image": { "type": "string" },
+        "image_alt": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string" }
+      }
+    },
+    "ReposBlock": {
+      "description": "A built-in plugin anchor carrying its own `repos` (`format: \"repos\"`).",
+      "type": "object",
+      "required": ["format", "repos"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": "repos" },
+        "repos": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" }
+        }
+      }
+    },
+    "Block": {
+      "description": "A pure block: it names one predefined `format` and carries that format's fields.",
+      "oneOf": [
+        { "$ref": "#/definitions/LinkBlock" },
+        { "$ref": "#/definitions/TextBlock" },
+        { "$ref": "#/definitions/FigureBlock" },
+        { "$ref": "#/definitions/ReposBlock" }
+      ]
+    }
+  },
   "properties": {
     "$schema": { "type": "string" },
     "version": { "type": "string" },
@@ -18,29 +87,33 @@
         "bio": { "type": "string" },
         "avatar": { "type": "string" },
         "avatar_alt": { "type": "string" },
-        "location": { "type": "string" }
+        "location": { "type": "string" },
+        "hide": {
+          "type": "array",
+          "items": { "enum": ["tagline", "bio", "avatar", "location"] }
+        },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "twitter": { "type": "string" },
+        "lang": { "type": "string" },
+        "favicon": { "type": "string" }
       },
       "if": { "required": ["avatar"] },
       "then": { "required": ["avatar_alt"] }
     },
-    "links": {
+    "blocks": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": ["title", "url"],
-        "additionalProperties": false,
+      "items": { "$ref": "#/definitions/Block" },
+      "contains": {
         "properties": {
-          "title": { "type": "string", "minLength": 1 },
-          "url": { "type": "string", "format": "uri" },
-          "icon": { "type": "string" },
-          "subtitle": { "type": "string" },
-          "button": { "type": "boolean" },
-          "new_tab": { "type": "boolean" },
-          "featured": { "type": "boolean" },
-          "nofollow": { "type": "boolean" }
-        }
-      }
+          "format": { "enum": ["row", "button", "card", "repos"] }
+        },
+        "required": ["format"]
+      },
+      "minContains": 1
     },
     "theme": {
       "type": "object",
@@ -72,55 +145,17 @@
         }
       }
     },
-    "seo": {
+    "footer": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "image": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
-        "twitter": { "type": "string" },
-        "lang": { "type": "string" },
-        "favicon": { "type": "string" }
-      }
-    },
-    "analytics": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "provider": { "enum": ["none", "plausible", "umami", "google"] },
-        "plausible_domain": { "type": "string" },
-        "umami_website_id": { "type": "string" },
-        "google_analytics_id": { "type": "string" },
-        "click_counter_endpoint": { "type": "string", "format": "uri" }
-      }
-    },
-    "plugins": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "github_repos": {
-          "type": "array",
-          "items": { "type": "string", "pattern": "^[^/]+/[^/]+$" }
-        },
-        "youtube_channel": { "type": "string" },
-        "rss_feed": { "type": "string", "format": "uri" },
-        "rss_limit": { "type": "integer", "minimum": 1, "maximum": 20 },
         "show_last_updated": { "type": "boolean" },
-        "footer_label": { "type": "string" }
-      }
-    },
-    "sections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "title": { "type": "string" },
-          "body": { "type": "string" },
-          "placement": { "enum": ["before", "after"] }
-        }
+        "updated": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "Content last-updated date (YYYY-MM-DD); not the package/build date."
+        },
+        "label": { "type": "string" }
       }
     }
   }

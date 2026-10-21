@@ -22,13 +22,18 @@
  */
 
 export type {
-  AnalyticsConfig,
+  Block,
+  BlockFormat,
   ContentSection,
+  FooterConfig,
+  ImageBlock,
+  LinkBlock,
   LinkItem,
   LinklistConfig,
-  PluginsConfig,
+  PluginBlock,
   Profile,
-  SeoConfig,
+  ProfileField,
+  SectionBlock,
   ThemeConfig,
   ThemeTokens,
 } from "./lib/types.ts";
@@ -68,17 +73,15 @@ export {
 } from "./lib/generate.ts";
 export type { GeneratedFile, } from "./lib/generate.ts";
 
-// Plugin contract + orchestration (runs at build for SaaS, in the browser for
-// the static site; the network always stays injected, never a global).
-export { mergePluginOutputs, runPlugins, } from "./plugins/engine.ts";
-export type {
-  LinklistPlugin,
-  PluginContext,
-  PluginOutput,
-} from "./plugins/engine.ts";
+// Block-expansion contract (runs in the browser for the static site, at build
+// for SaaS; the network always stays injected, never a global). The ordered
+// `blocks` flow is where plugin output lands: `resolveBlocks` expands each
+// `plugin` block's own data in place via a matching `BlockExpander`.
+export { resolveBlocks, } from "./plugins/engine.ts";
+export type { BlockExpander, PluginContext, } from "./plugins/engine.ts";
 
-// Built-in plugins (the default data contributions core ships with).
-export { builtinPlugins, githubReposPlugin, } from "./plugins/mod.ts";
+// Built-in expanders (the default data contributions core ships with).
+export { builtinExpanders, githubReposExpander, } from "./plugins/mod.ts";
 
 // Build/validate CLI (Cliffy; parsing only runs via `deno run`). Only the
 // root program and the reusable writer are public: subcommand instances carry

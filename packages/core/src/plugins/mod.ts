@@ -1,17 +1,17 @@
 /**
  * @file mod.ts
- * @description Built-in plugins for `@vanaware/linklist`.
+ * @description Built-in plugin expanders for `@vanaware/linklist`.
  *
- * Plugins fetch remote data (GitHub stars, latest release) through the injected
- * `fetchJson` and return plain data that core merges into the config before
- * rendering — only when the user opts a plugin in via config. They live in core
- * so the engine and its default plugins ship together; there is no separate
- * plugins package.
+ * Expanders fetch remote data (GitHub stars, latest release) through the
+ * injected `fetchJson` and return render-ready blocks that `resolveBlocks`
+ * splices in place — only when the user adds a matching `plugin` block to
+ * `config.blocks`. They live in core so the engine and its default expanders
+ * ship together; there is no separate plugins package.
  */
-import type { LinklistPlugin, } from "./engine.ts";
-import { githubReposPlugin, } from "./github_repos.ts";
+import type { BlockExpander, } from "./engine.ts";
+import { githubReposExpander, } from "./github_repos.ts";
 
-export { githubReposPlugin, } from "./github_repos.ts";
+export { githubReposExpander, } from "./github_repos.ts";
 
-/** Plugins core runs automatically. Extend this list to add more. */
-export const builtinPlugins: LinklistPlugin[] = [githubReposPlugin,];
+/** Expanders core runs for `plugin` blocks. Extend this list to add more. */
+export const builtinExpanders: BlockExpander[] = [githubReposExpander,];

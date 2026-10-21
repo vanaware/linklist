@@ -9,7 +9,15 @@
  * declares types. Runtime validation lives in `lib/schema.ts`.
  */
 
-/** Identity block rendered at the top of the page. */
+/** Profile fields the reader may hide on screen (`name` is always shown). */
+export type ProfileField = "tagline" | "bio" | "avatar" | "location";
+
+/**
+ * Identity block: rendered at the top of the page AND the source of the
+ * document `<head>` metadata. Screen fields (`name`/`tagline`/`bio`/`avatar`/
+ * `location`) are gated by `hide`; the remaining fields are head-only
+ * overrides that fall back to the identity fields (see `lib/seo.ts`).
+ */
 export interface Profile {
   /** Display name (rendered as the page `<h1>`). Required. */
   name: string;
@@ -23,9 +31,25 @@ export interface Profile {
   avatar_alt?: string;
   /** Optional location metadata chip. */
   location?: string;
+  /** Fields to hide on screen. Data still feeds the SEO head/manifest. */
+  hide?: ProfileField[];
+  /** Document `<title>`; head-only. Defaults to `name`. */
+  title?: string;
+  /** Meta + OG description; head-only. Defaults to `tagline`. */
+  description?: string;
+  /** Social preview image; head-only. Defaults to `avatar`. */
+  image?: string;
+  /** Canonical/site base URL; head-only. */
+  url?: string;
+  /** Twitter handle for `twitter:site`; head-only. */
+  twitter?: string;
+  /** Document `lang` attribute; head-only. Defaults to "en". */
+  lang?: string;
+  /** Favicon path/URL; head-only, else a generated inline-SVG favicon. */
+  favicon?: string;
 }
 
-/** A single entry in the link list. */
+/** A single entry in the link list. Presentation lives on the block's `format`. */
 export interface LinkItem {
   /** Link label (visible text). Required. */
   title: string;
@@ -33,14 +57,14 @@ export interface LinkItem {
   url: string;
   /** Bundled brand icon name (e.g. "github", "youtube"). Optional. */
   icon?: string;
+  /** Thumbnail image (path/URL) shown in place of `icon`. Optional. */
+  image?: string;
+  /** Alt text for `image`. REQUIRED whenever `image` is set (a11y). */
+  image_alt?: string;
   /** Optional secondary line under the title. */
   subtitle?: string;
-  /** Render as a filled button instead of a plain row. Defaults to false. */
-  button?: boolean;
   /** Open in a new tab (adds rel="noopener"). Defaults to false. */
   new_tab?: boolean;
-  /** Emphasize visually. Defaults to false. */
-  featured?: boolean;
   /** Add rel="nofollow" for SEO control. Defaults to false. */
   nofollow?: boolean;
 }
@@ -71,80 +95,104 @@ export interface ThemeConfig {
   custom?: ThemeTokens;
 }
 
-/** SEO and social metadata. */
-export interface SeoConfig {
-  /** Document `<title>`. Defaults to `profile.name`. */
-  title?: string;
-  /** Meta + OG description. */
-  description?: string;
-  /** Social preview image path/URL (1200x630 recommended). */
-  image?: string;
-  /** Canonical/site base URL, used for sitemap and absolute OG URLs. */
-  url?: string;
-  /** Twitter handle for `twitter:site` (with or without leading @). */
-  twitter?: string;
-  /** Document language for the `lang` attribute. Defaults to "en". */
-  lang?: string;
-  /** Favicon path/URL; else a generated inline SVG favicon is used. */
-  favicon?: string;
-}
-
-/** Analytics configuration. Everything defaults to disabled (privacy-first). */
-export interface AnalyticsConfig {
-  /** Analytics provider. Defaults to "none". */
-  provider?: "none" | "plausible" | "umami" | "google";
-  /** REQUIRED when provider === "plausible". */
-  plausible_domain?: string;
-  /** REQUIRED when provider === "umami". */
-  umami_website_id?: string;
-  /** REQUIRED when provider === "google". */
-  google_analytics_id?: string;
-  /** Optional self-hosted click-count endpoint. Never identifies users. */
-  click_counter_endpoint?: string;
-}
-
-/** Content plugins (data fetched at build for SaaS, or at runtime in the browser). */
-export interface PluginsConfig {
-  /** GitHub repos to show stars / latest release for (owner/repo). */
-  github_repos?: string[];
-  /** YouTube channel id — renders a latest-video card at build time. */
-  youtube_channel?: string;
-  /** RSS feed URL — renders the latest items at build time. */
-  rss_feed?: string;
-  /** Number of RSS items to render. Defaults to 3. */
-  rss_limit?: number;
-  /** Show a "last updated" footer line. Defaults to false. */
+/** Optional footer note (the "Made with linklist" brand line always shows). */
+export interface FooterConfig {
+  /** Show the "Last updated" note line (needs `updated` or a `label`). Default false. */
   show_last_updated?: boolean;
-  /** Optional Markdown for the footer line (defaults to a last-updated note). */
-  footer_label?: string;
+  /**
+   * The **content** last-updated date as `YYYY-MM-DD` (author-maintained). This is
+   * deliberately NOT the package/build date — it is when the page content changed.
+   */
+  updated?: string;
+  /** Optional Markdown note overriding the auto "Last updated <date>" line. */
+  label?: string;
 }
 
-/** A user-authored content block (Markdown body) placed around the links. */
+/** A user-authored content block (Markdown body) inside the `blocks` flow. */
 export interface ContentSection {
   /** Optional heading shown above the body. */
   title?: string;
-  /** Markdown body, rendered at build (see `markdown.ts`). */
+  /** Markdown body, rendered by the app (see `components/markdown.ts`). */
   body?: string;
-  /** Placement relative to the link list. Defaults to "after". */
-  placement?: "before" | "after";
 }
 
-/** Top-level configuration object for a linklist site. */
+/**
+ * The predefined block presentations an author picks from with `block.format`.
+ * Each format implies the content fields it needs (link → url/title, text →
+ * body, figure → image, repos → repos); the validator maps it to the matching
+ * render shape below.
+ */
+export type BlockFormat =
+  | "row"
+  | "button"
+  | "card"
+  | "text"
+  | "figure"
+  | "repos";
+
+/** Ordered-flow block: a single link, presented per its `format`. */
+export interface LinkBlock {
+  /** Block discriminant (assigned by the validator from `format`). */
+  type: "link";
+  /** Predefined presentation: a plain row, a filled button, or a card. */
+  format: "row" | "button" | "card";
+  /** The link's data. */
+  link: LinkItem;
+}
+
+/** Ordered-flow block: a Markdown content section, inline with the links. */
+export interface SectionBlock {
+  /** Block discriminant. */
+  type: "section";
+  /** Optional heading shown above the body. */
+  title?: string;
+  /** Markdown body. */
+  body?: string;
+}
+
+/** Ordered-flow block: a standalone image/figure with an optional caption. */
+export interface ImageBlock {
+  /** Block discriminant (assigned by the validator's block classifier). */
+  type: "image";
+  /** Image path (relative, copied at build) or absolute URL. */
+  image: string;
+  /** Alt text. Required (a11y). */
+  image_alt: string;
+  /** Optional caption shown under the image. */
+  caption?: string;
+}
+
+/**
+ * Ordered-flow block: a built-in plugin anchor that carries its OWN data.
+ * The `repos` list is expanded in place at runtime by the matching
+ * `BlockExpander` (see `plugins/engine.ts`); empty repos render nothing.
+ */
+export interface PluginBlock {
+  /** Block discriminant (assigned by the validator's block classifier). */
+  type: "plugin";
+  /** Built-in plugin id, e.g. "github-repos". */
+  name: string;
+  /** Repos (`owner/repo`) to render as stars + latest release. */
+  repos: string[];
+}
+
+/** One item of the page's ordered content (`config.blocks`). */
+export type Block =
+  | LinkBlock
+  | SectionBlock
+  | ImageBlock
+  | PluginBlock;
+
+/** Top-level configuration object for a linklist site (shape v2). */
 export interface LinklistConfig {
   /** Optional schema version stamp for forward compatibility. */
   version?: string;
-  /** Identity block: name, tagline, bio, avatar. Name is required. */
+  /** Identity + head metadata: name, tagline, bio, avatar, url, twitter, … */
   profile: Profile;
-  /** At least one link is required. */
-  links: LinkItem[];
+  /** The page's content in final display order (link / section / image / plugin). */
+  blocks: Block[];
   /** Preset + mode + token overrides for the page appearance. */
   theme: ThemeConfig;
-  /** Optional SEO/social metadata (falls back to profile fields). */
-  seo?: SeoConfig;
-  /** Optional analytics; everything defaults to disabled (privacy-first). */
-  analytics?: AnalyticsConfig;
-  /** Optional built-in plugin toggles and footer options. */
-  plugins?: PluginsConfig;
-  /** Optional Markdown content blocks placed before/after the link list. */
-  sections?: ContentSection[];
+  /** Optional footer note (last-updated / custom label; brand line is always on). */
+  footer?: FooterConfig;
 }

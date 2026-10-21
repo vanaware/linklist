@@ -1,6 +1,6 @@
 {
   "name": "@vanaware/linklist",
-  "version": "0.1.26#mvgwczni",
+  "version": "0.2.11#mvirkt3f",
   "description": "Pure config schema, validator and static renderer for linklist.",
   "author": "Vanaware",
   "license": "MIT",

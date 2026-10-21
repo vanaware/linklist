@@ -9,14 +9,26 @@ next task.
 - **UI stack — retained from mdBlog**: Preact + `@preact/signals` (components/state),
   **BeerCSS** for styling (loaded via **CDN**, exactly as mdBlog does today), and the
   **Markdown** pipeline for user-authored text.
+- **Islands roadmap (future, load-bearing)**: interactive `config.blocks` will reuse the
+  mdBlog island model — a block declares an island that hydrates a live Preact component
+  at runtime. This REQUIRES `preact` + `@preact/signals` to remain in the browser bundle
+  as a **single shared instance** (never stripped, never a second copy), so island
+  components and the `components/state.ts` store react against the same Preact/signals
+  graph. Today the whole client ships as one `linklist.js` bundle, which guarantees that
+  one instance; if islands are later authored as external/runtime modules they must resolve
+  `preact` and `@preact/signals` through a shared **import map** (or the same CDN pins)
+  instead of bundling a duplicate. This is why the signals store stays even though the
+  current page is a one-shot render with no live state.
 - **Render model — static head + client-rendered body**: the build bakes the
   per-profile SEO `<head>`, the PWA `manifest.json` and `robots.txt` into real files
   (via `core/src/lib/generate.ts`), so crawlers and link-preview scrapers read the
   metadata **without JavaScript**. `index.html` also ships a generic `<noscript>`
-  Linklist fallback listing the profile links. At runtime `linklist.js` (from
+  Linklist fallback listing the `links` blocks in declared order (sections and plugin
+  anchors are skipped; `profile.hide` is honored there too). At runtime `linklist.js`
+  (from
   `core/src/entry.ts`) fetches `./config.json` (relative, so it works at a domain root
-  OR subfolder), validates it, runs plugins, applies the theme and hydrates the Preact
-  `App` into `#app` — it no longer injects the head (`applyHead`/`headFragment` are
+  OR subfolder), validates it, resolves plugin blocks, applies the theme and hydrates the
+  Preact `App` into `#app` — it no longer injects the head (`applyHead`/`headFragment` are
   gone). The config is still NEVER embedded; no-JS visitors get the `<noscript>`
   fallback only.
 - **Build = codegen + buildit**: `deno task linklist:build` runs the core Cliffy CLI
@@ -35,7 +47,27 @@ next task.
 - **Markdown is allowed in**: `profile.bio` / `tagline`, dedicated about/section
   blocks, per-link `subtitle`, and the footer line (not plugin output areas, for now).
 - **Config**: a single `config.json` (JSON, not YAML) validated with **ArkType**
-  (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`.
+  (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`. **Content
+  model** — _pure blocks_: each `config.blocks` entry is a single self-contained item
+  that names a predefined `format` — `row`/`button`/`card` (a link, needs `title`+`url`),
+  `text` (a Markdown section, needs `body`/`markdown`), `figure` (needs `image`+`image_alt`),
+  `repos` (the GitHub plugin, needs a non-empty `owner/repo` list). The validator
+  (`lib/schema.ts` `classifyBlock`) switches on `format`, checks that format's required
+  fields, and builds a discriminated render shape — so downstream code still switches on
+  `block.type`: `link` (carrying its `format` + a `LinkItem`), `section`, `image`, `plugin`
+  (`repos`). There is no `type` key and no nesting (no `links: []` array) in the authored
+  config; consecutive `link` blocks group into one list on screen, any other block breaks
+  the run. `profile` doubles as the head-metadata source: optional head-only
+  overrides `title`/`description`/`image`/`url`/`twitter`/`lang`/`favicon` fall back to
+  the screen fields; there is no analytics or tracking. Footer options live in a
+  `footer` group (`show_last_updated`/`updated`/`label`): a `Made with linklist ·
+  v<package>` brand line **always** renders — in both the live footer and the build-time
+  `<noscript>` fallback (version is the **package** stamp read from
+  `packages/core/deno.jsonc` and shared via `lib/brand.ts`, never the content), and an opt-in `Last updated <date>` note reads the author-maintained
+  `footer.updated` **content** date (validated `YYYY-MM-DD`) — never the build clock or
+  the visitor's `Date.now()`. `profile.hide` is the **single**
+  on-screen list (`name` always shows; the data still feeds head/JSON-LD/manifest), and
+  `link.image` (⇒ `image_alt`, same a11y rule as `avatar` ⇒ `avatar_alt`) is a thumbnail.
 - **CLI lives in core** (reverses the earlier "no CLI package" stance): the former
   `packages/cli` is gone, but a small Cliffy program (`core/src/cli.ts`, exported from
   `mod.ts` as `linklistCommand` + `buildSiteFiles` — only the root command object is
@@ -164,13 +196,14 @@ next task.
   (`cp docs/templates/…`) and the moved README's relative links. The `export.jsonc`
   `docs` mode already covers `docs/**` — no build/CI change needed.
 - ✅ **M5f** — Design polish & visual QA (pure BeerCSS). Redesigned both presets
-  (hero profile, elevated link cards with icon tiles/chevrons, gradient featured
+  (hero profile, elevated link cards with icon tiles/chevrons, gradient card
   variant) and namespaced every theme token as `--ll-*` so BeerCSS-owned MD3 vars
   can never override them. A browser-preview audit then caught three real bugs,
   all fixed: (1) BeerCSS paints `header`/`footer` with a light
   `--surface-container` — added a `.linklist` landmark reset so profile/footer sit
   on the page background; (2) `li.link.button` was hijacked by BeerCSS's `.button
-  component` — variant classes renamed to `is-button`/`is-featured`; (3) brand
+  component` — variant classes renamed to `is-button`/`is-card` (the card variant
+  was first `is-featured`); (3) brand
   names (`mastodon`, …) are not Material ligatures — `BrandIcon` now ships 13
   inline simple-icons SVGs. Also added: `readableInk` (WCAG luminance-based
   on-primary ink auto-derived from any custom `primary_color`), a placeholder
@@ -262,8 +295,41 @@ next task.
   `"publish": false` — the publish dry-run passes with it. Docs
   (`publish-jsr-rules.md`, workflow header) now read **ready to publish**: the
   only release step left is pushing a `v*.*` tag (and the `@vanaware` JSR scope)
-- ⏭️ **M7 (next)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
+- ⏭️ **M7 (pending)** — Lighthouse + WCAG 2.1 AA checklist on the built example; document
   results (AA contrast portion already covered in M5f).
+- ✅ **M8** — Pure-blocks content model (the current config shape). The page is a
+  single ordered `config.blocks` list whose declaration order IS display order; each
+  entry is a self-contained item that names one predefined `format`, and the validator
+  (`lib/schema.ts` `classifyBlock`) **switches on `format`** to check that format's
+  required fields and build a discriminated render shape — so every downstream consumer
+  still switches on `block.type`. Formats: `row`/`button`/`card` (a link, need
+  `title`+`url`) → `LinkBlock { type: "link", format, link }`; `text` (needs
+  `body`/`markdown`) → `section`; `figure` (needs `image`+`image_alt`) → the standalone
+  `image` block (`ImageBlock` + `.block-image` in both presets); `repos` (non-empty
+  `owner/repo` list) → `plugin`. There is no `type` key and no nesting (the old
+  `links: []` array is gone); consecutive `link` blocks group into one list on screen
+  (`App.renderBlocks`), any other block breaks the run, and the link `format` selects the
+  presentation via an `is-button`/`is-card` variant class (row = bare). `profile` doubles
+  as the head-metadata source (optional `title`/`description`/`image`/`url`/`twitter`/
+  `lang`/`favicon` falling back to the screen fields); there is no analytics or tracking;
+  footer options live in a `footer` group; `profile.hide` is the single on-screen list
+  and per-link `image`/`image_alt` thumbnails are styled in both presets. The plugin
+  engine runs per-block expanders: `BlockExpander` + async
+  `resolveBlocks(config, ctx, expanders)` (`github_repos.ts` exports
+  `githubReposExpander`; `entry.ts` runs `builtinExpanders`; the static build never runs
+  plugins). `mod.ts` exposes `LinkBlock`/`BlockFormat`/`ImageBlock`/`FooterConfig`/
+  `resolveBlocks`/`BlockExpander`/`builtinExpanders`. No backward-compatibility layer is
+  retained. Gates green: `tests` (25 suites / 90 steps — per-`format` classification,
+  required-field and semantic cases), `lint:doc`, `linklist:build` + `denobuild` (head
+  from merged `profile`, `sameAs`/noscript via link blocks, card CSS shipped to dist all
+  verified).
+- ⏭️ **M9 (roadmap — not started)** — Island blocks: let a `config.blocks` entry declare an
+  interactive island (a Preact component + signals) that hydrates in place, as
+  `@vanaware/mdBlog` does. Precondition already met: `preact` + `@preact/signals` stay in
+  the runtime bundle as one shared instance and `components/state.ts` keeps the signals
+  store. When island authoring moves out of core, decide same-bundle vs import-map
+  exposure so islands never load a duplicate Preact/signals. (See the *Islands roadmap*
+  decision above.)
 
 ## Known environment note
 

@@ -40,16 +40,23 @@ Described in full in the [Configuration reference](configuration.md).
 
 | Type | Purpose |
 | --- | --- |
-| `LinklistConfig` | Top-level config object. |
-| `Profile`, `LinkItem`, `ContentSection` | Identity, links, Markdown blocks. |
+| `LinklistConfig` | Top-level config object (`blocks` is the ordered page content; `footer` optional). |
+| `Profile`, `LinkItem`, `ContentSection` | Identity (screen fields + head-only overrides + `hide`), links (incl. `image`/`image_alt`), Markdown bodies. |
+| `Block`, `LinkBlock`, `SectionBlock`, `ImageBlock`, `PluginBlock` | The `blocks[]` discriminated union the validator builds from each authored block's `format`. |
+| `BlockFormat` | `"row" \| "button" \| "card" \| "text" \| "figure" \| "repos"` — the predefined presentation each block names. |
+| `FooterConfig` | Optional footer line (`show_last_updated`, `label`). |
+| `ProfileField` | `"tagline" \| "bio" \| "avatar" \| "location"` — values accepted by `profile.hide`. |
 | `ThemeConfig`, `ThemeTokens` | Appearance. |
-| `SeoConfig`, `AnalyticsConfig`, `PluginsConfig` | Metadata, analytics, plugins. |
 
 ---
 
 ## Validation (`lib/schema.ts`)
 
-Built on ArkType plus semantic cross-field checks. Pure — no I/O.
+Built on ArkType plus a **block classifier** and semantic cross-field checks: every
+authored `blocks[]` item names a `format`, and `validateConfig` builds each one's
+discriminated render shape (`row`/`button`/`card` → a `link`, `text` → a `section`,
+`figure` → an `image`, `repos` → a `plugin`) before returning the typed config.
+Pure — no I/O.
 
 ```ts
 // internal (arktype is an npm dependency; `configType` is not JSR-public)
@@ -100,7 +107,7 @@ export { computed, signal } from "@preact/signals"
 
 const configSignal: Signal<LinklistConfig | null>   // null until setConfig()
 function setConfig(config: LinklistConfig | null): void
-const linksSignal:  Computed<LinkItem[]>            // [] before a config
+const blocksSignal:  Computed<Block[]>              // [] before a config
 const themeSignal:  Computed<string>                // preset name (defaults "minimal-dark")
 ```
 
@@ -114,10 +121,11 @@ signals above (or explicit props where noted).
 
 | Export | Notes |
 | --- | --- |
-| `App` (`AppProps`) | Root: renders profile, sections and links (takes a `config` prop). |
-| `ProfileHeader` | Name (`<h1>`), tagline, bio, avatar, location. |
-| `LinkList`, `LinkRow` | The link list; `LinkRow` renders one `LinkItem`. |
-| `ContentSectionView` | One `ContentSection` (heading + Markdown body). |
+| `App` (`AppProps`) | Root: renders the profile header, then `config.blocks` in declared order (takes a `config` prop). |
+| `ProfileHeader` | Name (`<h1>`, always), tagline, bio, avatar, location — skipping fields listed in `profile.hide`. |
+| `LinkList`, `LinkRow` | Consecutive `link` blocks grouped into one list; `LinkRow` renders one `LinkItem` in its `format` (image thumbnail when `image` is set, else `icon`). |
+| `ContentSection` | One `section` block (heading + Markdown body). |
+| `ImageBlock` | One `image` block — a `<figure>` with `<img>` (alt guaranteed) and optional `<figcaption>`. |
 | `MarkdownText` | Renders a Markdown string inline or as a block. |
 | `BrandIcon` | Icon for a `LinkItem.icon` name (Material symbols). |
 | `Footer` | Last-updated / custom footer line with the build version stamp. |
@@ -203,17 +211,22 @@ const linklistCommand: Command   // .command("build") + .command("validate [path
 The contract and orchestration. Full walkthrough in [Plugins](plugins.md).
 
 ```ts
-interface LinklistPlugin { name: string; run(ctx: PluginContext): Promise<PluginOutput> }
-interface PluginContext  { config; fetchJson(url); warn(message) }
-interface PluginOutput   { links?: LinkItem[]; sections?: ContentSection[] }
+interface PluginContext { fetchJson(url: string): Promise<unknown>; warn(message: string): void }
+interface BlockExpander {
+  name: string;
+  expand(repos: string[], ctx: PluginContext): Promise<Block[]>;  // blocks to splice in place
+}
 
-function runPlugins(plugins: LinklistPlugin[], ctx: PluginContext): Promise<PluginOutput[]>
-function mergePluginOutputs(config: LinklistConfig, outputs: PluginOutput[]): LinklistConfig
+async function resolveBlocks(
+  config: LinklistConfig,
+  ctx: PluginContext,
+  expanders: BlockExpander[],
+): Promise<Block[]>
 ```
 
-Core also ships its default plugins: `builtinPlugins` (the list core runs) and
-`githubReposPlugin` are exported from `@vanaware/linklist` (from `plugins/mod.ts`).
-There is no separate plugins package.
+Core also ships its default expanders: `builtinExpanders` (the list `entry.ts` runs) and
+`githubReposExpander` are exported from `@vanaware/linklist` (from `plugins/mod.ts`).
+There is no separate plugins package, no global `plugins` section and no analytics.
 
 ---
 
@@ -229,7 +242,8 @@ by the `Footer` component as `APP_VERSION`. Treat it as build metadata, not API.
 
 Not part of `mod.ts`. This is the bundle's `main`: it fetches `./config.json` (relative, so
 it works under any base path), runs `parseAndValidate`, feeds failures to an error view,
-otherwise installs the config with `setConfig`, runs the built-in plugins, merges their
-output, applies the theme (body class + preset CSS + `theme.custom` tokens), and renders
-`<App/>`. The `<head>` is NOT touched here — it is finalized into `index.html` at build
-time. The body is client-rendered and the config is never embedded.
+otherwise resolves the built-in plugin blocks with `resolveBlocks` (each `repos` block is
+expanded in place), installs the config with `setConfig`, applies the theme (body class +
+preset CSS + `theme.custom` tokens), and renders `<App/>`. The `<head>` is NOT touched here
+— it is finalized into `index.html` at build time. The body is client-rendered and the
+config is never embedded.

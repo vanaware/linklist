@@ -174,7 +174,7 @@ body {
   box-shadow: var(--ll-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
-.link.is-featured a {
+.link.is-card a {
   background: linear-gradient(135deg, var(--ll-primary), var(--ll-accent));
   color: var(--ll-on-primary);
   border-color: transparent;
@@ -204,8 +204,16 @@ body {
   color: var(--ll-link);
 }
 
+/* link.image thumbnail: fills the icon tile, keeps its rounded shape */
+.link-icon .thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .link.is-button .link-icon,
-.link.is-featured .link-icon {
+.link.is-card .link-icon {
   background: rgba(255, 255, 255, 0.22);
   color: inherit;
 }
@@ -230,7 +238,7 @@ body {
 }
 
 .link.is-button .link-subtitle,
-.link.is-featured .link-subtitle {
+.link.is-card .link-subtitle {
   color: inherit;
   opacity: 0.85;
 }
@@ -243,7 +251,7 @@ body {
 }
 
 .link.is-button .chevron,
-.link.is-featured .chevron {
+.link.is-card .chevron {
   color: inherit;
   opacity: 0.85;
 }
@@ -283,6 +291,26 @@ i.icon {
 
 .section a {
   color: var(--ll-link);
+}
+
+/* Standalone image / figure block */
+.linklist .block-image {
+  margin: 1.5rem 0;
+}
+
+.block-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  border-radius: var(--ll-radius);
+}
+
+.block-image figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ll-muted);
+  text-align: center;
 }
 
 /* Footer */

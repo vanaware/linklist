@@ -10,17 +10,26 @@ import {
 import type { LinklistConfig, } from "../src/lib/types.ts";
 
 const config: LinklistConfig = {
-  profile: { name: "Jane Doe", tagline: "Maker", },
-  links: [
-    { title: "GitHub", url: "https://github.com/jane", },
-    { title: "Site", url: "https://jane.dev", },
-  ],
-  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
-  seo: {
+  profile: {
+    name: "Jane Doe",
+    tagline: "Maker",
     url: "https://jane.dev/",
     description: "Jane's links",
     twitter: "@janedoe",
   },
+  blocks: [
+    {
+      type: "link",
+      format: "row",
+      link: { title: "GitHub", url: "https://github.com/jane", },
+    },
+    {
+      type: "link",
+      format: "row",
+      link: { title: "Site", url: "https://jane.dev", },
+    },
+  ],
+  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
 };
 
 describe("escapeHtml / safeJson", () => {
@@ -41,6 +50,35 @@ describe("buildJsonLd", () => {
     assertEquals(ld["@type"], "Person",);
     assertEquals(ld.name, "Jane Doe",);
     assertEquals((ld.sameAs as string[]).length, 2,);
+  });
+  it("collects sameAs from every link block, ignoring others", () => {
+    const ld = buildJsonLd({
+      ...config,
+      blocks: [
+        {
+          type: "link",
+          format: "row",
+          link: { title: "A", url: "https://a.test", },
+        },
+        { type: "section", title: "About", body: "text", },
+        {
+          type: "link",
+          format: "button",
+          link: { title: "B", url: "https://b.test", },
+        },
+        {
+          type: "link",
+          format: "card",
+          link: { title: "C", url: "https://c.test", },
+        },
+        { type: "plugin", name: "github-repos", repos: ["a/b",], },
+      ],
+    },);
+    assertEquals(ld.sameAs, [
+      "https://a.test",
+      "https://b.test",
+      "https://c.test",
+    ],);
   });
 });
 

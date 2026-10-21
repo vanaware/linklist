@@ -24,6 +24,24 @@ import type { LinklistConfig, } from "./lib/types.ts";
 const DEFAULT_CONFIG = "./packages/core/public/config.json";
 const DEFAULT_OUT = "./packages/core/public";
 
+/**
+ * The package version stamped into the footer brand line. Read from this
+ * package's own `deno.jsonc` (resolved relative to this module, so it works
+ * regardless of the current directory) — the same source buildit uses to define
+ * `__APP_VERSION__`, so the static `<noscript>` brand matches the runtime one.
+ * Best-effort: an unreadable file just yields an unversioned brand.
+ */
+async function readPackageVersion(): Promise<string> {
+  try {
+    const text = await Deno.readTextFile(
+      new URL("../deno.jsonc", import.meta.url,).pathname,
+    );
+    return text.match(/"version"\s*:\s*"([^"]+)"/,)?.[1] ?? "";
+  } catch {
+    return "";
+  }
+}
+
 /** Read + validate a config file, throwing human-readable errors on failure. */
 async function loadConfig(path: string,): Promise<LinklistConfig> {
   const text = await Deno.readTextFile(path,).catch(() => null);
@@ -47,7 +65,7 @@ async function loadConfig(path: string,): Promise<LinklistConfig> {
 export async function buildSiteFiles(
   config: LinklistConfig,
   outDir: string,
-  opts: { baseUrl?: string } = {},
+  opts: { baseUrl?: string; version?: string } = {},
 ): Promise<string[]> {
   const base = resolve(outDir,);
   const written: string[] = [];
@@ -88,7 +106,8 @@ export const buildCommand = linklistCommand
   )
   .action(async ({ config, out, baseUrl, },) => {
     const data = await loadConfig(config,);
-    const written = await buildSiteFiles(data, out, { baseUrl, },);
+    const version = await readPackageVersion();
+    const written = await buildSiteFiles(data, out, { baseUrl, version, },);
     for (const path of written) {
       console.log(`  wrote ${path}`,);
     }

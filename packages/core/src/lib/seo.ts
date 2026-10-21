@@ -44,25 +44,30 @@ function absoluteUrl(
 /**
  * Build a `Person` JSON-LD document (name + avatar + `sameAs` profile links).
  * `base` (e.g. the CLI `--base-url`) resolves relative avatar/url values and
- * doubles as the profile URL when `seo.url` is not configured — keeping the
+ * doubles as the profile URL when `profile.url` is not configured — keeping the
  * structured data consistent with the OG tags in {@linkcode buildHead}.
  */
 export function buildJsonLd(
   config: LinklistConfig,
   base?: string,
 ): Record<string, unknown> {
-  const root = base ?? config.seo?.url ?? "";
+  const { profile, } = config;
+  const root = base ?? profile.url ?? "";
   const entry: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Person",
-    name: config.profile.name,
+    name: profile.name,
   };
-  const url = absoluteUrl(config.seo?.url ?? (root || undefined), root,);
-  const image = absoluteUrl(config.profile.avatar, root,);
+  const url = absoluteUrl(profile.url ?? (root || undefined), root,);
+  const image = absoluteUrl(profile.image ?? profile.avatar, root,);
+  const description = profile.description ?? profile.tagline;
   if (url) entry.url = url;
   if (image) entry.image = image;
-  if (config.profile.tagline) entry.description = config.profile.tagline;
-  const sameAs = config.links.map((l,) => l.url).filter(Boolean,);
+  if (description) entry.description = description;
+  const sameAs = config.blocks
+    .filter((block,) => block.type === "link")
+    .map((block,) => block.link.url)
+    .filter(Boolean,);
   if (sameAs.length) entry.sameAs = sameAs;
   return entry;
 }
@@ -83,16 +88,16 @@ export function buildHead(
   config: LinklistConfig,
   opts: { baseUrl?: string } = {},
 ): string {
-  const { profile, seo, theme, } = config;
-  const base = opts.baseUrl ?? seo?.url ?? "";
-  const title = seo?.title ?? profile.name;
-  const description = seo?.description ?? profile.tagline ?? "";
-  const url = absoluteUrl(seo?.url ?? (opts.baseUrl || undefined), base,);
-  const image = absoluteUrl(seo?.image ?? profile.avatar, base,);
-  const favicon = seo?.favicon
-    ? absoluteUrl(seo.favicon, base,)
+  const { profile, theme, } = config;
+  const base = opts.baseUrl ?? profile.url ?? "";
+  const title = profile.title ?? profile.name;
+  const description = profile.description ?? profile.tagline ?? "";
+  const url = absoluteUrl(profile.url ?? (opts.baseUrl || undefined), base,);
+  const image = absoluteUrl(profile.image ?? profile.avatar, base,);
+  const favicon = profile.favicon
+    ? absoluteUrl(profile.favicon, base,)
     : faviconDataUri(profile.name, themeColor(theme,),);
-  const handle = seo?.twitter?.replace(/^@/, "",);
+  const handle = profile.twitter?.replace(/^@/, "",);
 
   const lines: string[] = [
     `<title>${escapeHtml(title,)}</title>`,

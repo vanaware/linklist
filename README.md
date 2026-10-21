@@ -12,12 +12,14 @@
 
 ## 🌟 Highlights
 
-- **One file, whole page**: everything — profile, links, sections, theme, SEO — lives in
-  a versioned `config.json`, validated with [ArkType](https://arktype.io).
+- **One file, whole page**: everything — profile (identity + head metadata), the ordered
+  `blocks` flow (links as rows/buttons/cards, Markdown sections, figures, plugin data),
+  theme, footer — lives in a versioned `config.json`, validated with
+  [ArkType](https://arktype.io).
 - **Static head + client-rendered body**: the build bakes the per-profile SEO `<head>`
   (title / OG / Twitter / JSON-LD) and the PWA `manifest.json` into a real `index.html`,
-  while `linklist.js` fetches `./config.json` at runtime, runs plugins, applies the theme
-  and renders the Preact app. Crawlers and link previews see the metadata without JS.
+  while `linklist.js` fetches `./config.json` at runtime, resolves plugin blocks, applies
+  the theme and renders the Preact app. Crawlers and link previews see the metadata without JS.
   Paths are relative, so it works at a domain root **or** a subfolder.
 - **100% Pure Deno**: no Node runtime and no `node_modules` workflow. The static build is
   declarative via [`@vanaware/buildit`](https://jsr.io/@vanaware/buildit)
@@ -29,8 +31,8 @@
   section bodies, link subtitles and footer — rendered to real Preact VNodes, no
   `dangerouslySetInnerHTML`.
 - **Extensible engine**: the theme and plugin engines live in core, with a built-in
-  `github-repos` plugin (stars + latest release). Add your own by extending core.
-- **Private by default**: no analytics or click tracking unless you explicitly add them.
+  `github-repos` expander (stars + latest release). Add your own by extending core.
+- **Private by default**: no analytics or click tracking — there is none to opt into.
 
 ---
 
@@ -74,13 +76,14 @@ Open the URL the server prints. (See [Building](#-build) for the sandbox fallbac
 The build is entirely driven by buildit config files — first `deno task linklist:build`
 regenerates `index.html` / `manifest.json` / `robots.txt` (SEO head baked in) into
 `packages/core/public`, then the bundler cleans the output dir, copies the static assets
-+ theme CSS + `config.json`, and bundles `core/src/entry.ts` → `linklist.js`:
 
-| Task                   | Engine                  | Output                       | Notes                                                          |
-| ---------------------- | ----------------------- | ---------------------------- | -------------------------------------------------------------- |
-| `deno task esbuild`    | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle; runs `linklist:build` first.                        |
-| `deno task denobuild`  | Deno in-process bundler | `packages/server/build/dist` | Fallback for sandboxes where esbuild's subprocess can't spawn. |
-| `deno task linklist:build` | core CLI (`src/cli.ts`) | `packages/core/public`   | Site-file codegen only (chained by the tasks above).           |
+- theme CSS + `config.json`, and bundles `core/src/entry.ts` → `linklist.js`:
+
+| Task                       | Engine                  | Output                       | Notes                                                          |
+| -------------------------- | ----------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `deno task esbuild`        | **esbuild** (preferred) | `packages/server/build/dist` | Dev bundle; runs `linklist:build` first.                       |
+| `deno task denobuild`      | Deno in-process bundler | `packages/server/build/dist` | Fallback for sandboxes where esbuild's subprocess can't spawn. |
+| `deno task linklist:build` | core CLI (`src/cli.ts`) | `packages/core/public`       | Site-file codegen only (chained by the tasks above).           |
 
 > ⚠️ **Local sandbox note**: on some locked-down containers esbuild's npm subprocess
 > cannot start (`ChildProcess.unref` undefined). There, use `deno task denobuild` (Deno's
@@ -123,14 +126,19 @@ button ink and a AA-legible link tint per background. See [docs/theming.md](docs
 
 ## 🔌 Plugins
 
-The plugin engine and its built-in plugins live in core. Plugins fetch external data and
-append sections to your page; the network is always injected (never a global), so they run
-in the browser for the static site and can run at build time in a future hosted tier.
+The plugin engine and its built-in expanders live in core. A plugin is a
+`{ "format": "repos" }` block that carries its own data; the engine fetches external data
+and replaces the block **in
+place**, so the declared `blocks` order is the final display order. The network is always
+injected (never a global), so it runs in the browser for the static site and can run at
+build time in a future hosted tier.
 
-The built-in `github-repos` plugin renders repository stars and the latest release:
+The built-in `github-repos` expander renders repository stars and the latest release:
 
 ```jsonc
-{ "plugins": { "github_repos": ["vanaware/linklist"] } }
+{
+  "blocks": [ /* … */, { "format": "repos", "repos": ["vanaware/linklist"] } ]
+}
 ```
 
 ---

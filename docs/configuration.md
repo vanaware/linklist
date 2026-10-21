@@ -13,37 +13,102 @@ your editor.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `version` | string | no | Optional schema version stamp for forward compatibility (e.g. `"1"`). |
-| `profile` | object | **yes** | Identity block rendered at the top. |
-| `links` | array | **yes** | At least one link (see below). |
+| `version` | string | no | Optional schema version stamp (recommended: `"2"`). |
+| `profile` | object | **yes** | Identity block rendered at the top **and** the source of the `<head>` metadata. |
+| `blocks` | array | **yes** | The ordered page content (see below). At least one link block (`row`/`button`/`card`) or a `repos` block. |
 | `theme` | object | **yes** | Preset + mode + token overrides. |
-| `seo` | object | no | Document/social metadata. |
-| `analytics` | object | no | Disabled by default (privacy-first). |
-| `plugins` | object | no | Content plugins + third-party script URLs. |
-| `sections` | array | no | Markdown content blocks placed before/after the links. |
+| `footer` | object | no | Optional "Last updated" note (a "Made with linklist" brand line always shows). |
 
 ## `profile`
 
+`profile` is the single identity block. Some fields render **on screen**, others are
+**head-only** metadata (they never appear in the page body — they feed `<title>`,
+Open Graph, Twitter, JSON-LD and the PWA manifest; see `packages/core/src/lib/seo.ts`).
+
+### Screen fields (rendered in the page header)
+
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `name` | string | **yes** | Non-empty. Rendered as the page `<h1>`. |
+| `name` | string | **yes** | Non-empty. Rendered as the page `<h1>`; always shown. |
 | `tagline` | string | no | One-line subtitle (Markdown). |
 | `bio` | string | no | Short paragraph (Markdown). |
 | `avatar` | string | no | Relative path (copied at build) or absolute URL. |
 | `avatar_alt` | string | conditional | **Required whenever `avatar` is set** (accessibility). |
 | `location` | string | no | Metadata chip. |
+| `hide` | array | no | Fields to skip **on screen**: `"tagline"`, `"bio"`, `"avatar"`, `"location"` (this is the only hide list; head-only fields are never shown). The data still feeds the SEO head, JSON-LD and manifest. |
 
-## `links[]`
+### Head-only overrides
+
+Each falls back to a screen field, so you usually set none of them.
+
+| Field | Type | Used for | Defaults to |
+| --- | --- | --- | --- |
+| `title` | string | `<title>`, `og:title`, manifest `name` | `name` |
+| `description` | string | meta description, `og:description`, JSON-LD | `tagline` |
+| `image` | string | `og:image` / Twitter preview | `avatar` |
+| `url` | string | canonical URL, `og:url`, JSON-LD `url` (absolute http/https) | — |
+| `twitter` | string | `twitter:site` handle (with or without `@`) | — |
+| `lang` | string | `<html lang>` | `"en"` |
+| `favicon` | string | favicon path/URL | a generated inline-SVG favicon |
+
+## `footer`
+
+Every page always ends with a **"Made with linklist · vN"** brand line — `vN` is the
+**package** version (stamped at build), never your content's version. On top of that you
+can opt into a **content** last-updated note:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `show_last_updated` | boolean | Show the last-updated note line above the brand. Default `false`. |
+| `updated` | string | The **content** last-updated date as `YYYY-MM-DD` (author-maintained; validated). Rendered as "Last updated <date>". |
+| `label` | string | Custom Markdown note that overrides the auto "Last updated <date>" line. |
+
+The note renders only when `show_last_updated` is `true` **and** an `updated` date (or
+`label`) is present. The date is a plain string you keep current — the app never infers it
+from the build or the visitor's clock. The **brand line also appears in the build-time
+no-JS `<noscript>` fallback** (with the same package version), so crawlers and JS-disabled
+visitors see it too.
+
+## `blocks[]`
+
+The page is the literal order of `blocks`: declaration order **is** display order.
+Every block is a **pure, self-contained item** that names one predefined `format`.
+The `format` decides both how the block renders **and** which fields it needs. There
+is no `type` key and no nesting — a link is a block, a paragraph is a block. Consecutive
+link blocks are grouped into a single list on screen; any other block breaks the run.
+
+| `format` | Renders as | Required fields | Optional fields |
+| --- | --- | --- | --- |
+| `row` | a full-width link row | `title`, `url` | `icon`, `image`+`image_alt`, `subtitle`, `new_tab`, `nofollow` |
+| `button` | a filled button link | `title`, `url` | same as `row` |
+| `card` | an emphasized card link | `title`, `url` | same as `row` (usually with `image`) |
+| `text` | a Markdown content section | `body` (or `markdown`) | `title` |
+| `figure` | a standalone image/figure | `image`, `image_alt` | `caption` |
+| `repos` | the GitHub-repos plugin block | `repos` (`owner/repo` list) | — |
+
+```jsonc
+"blocks": [
+  { "format": "button", "title": "GitHub", "url": "https://github.com/janedoe", "icon": "github" },
+  { "format": "card", "title": "Blog", "url": "https://janedoe.dev", "image": "./assets/cover.svg", "image_alt": "Blog cover" },
+  { "format": "text", "title": "About", "body": "Markdown **here**" },
+  { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" },
+  { "format": "repos", "repos": ["vanaware/linklist"] }
+]
+```
+
+### Link fields (`row` / `button` / `card`)
+
+The three link formats share one data shape; `format` picks only the presentation:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `title` | string | **yes** | Non-empty visible label. |
 | `url` | string | **yes** | Must be a valid **absolute** URL (`http`/`https`). |
 | `icon` | string | no | Bundled brand-icon name (e.g. `github`, `website`, `mastodon`). |
+| `image` | string | no | Thumbnail replacing the icon tile (relative path or URL). |
+| `image_alt` | string | conditional | **Required whenever `image` is set** (accessibility). |
 | `subtitle` | string | no | Secondary line (Markdown). |
-| `button` | boolean | no | Render as a filled button. Default `false`. |
 | `new_tab` | boolean | no | Open in a new tab with `rel="noopener"`. Default `false`. |
-| `featured` | boolean | no | Visual emphasis. Default `false`. |
 | `nofollow` | boolean | no | Add `rel="nofollow"`. Default `false`. |
 
 ## `theme`
@@ -59,68 +124,39 @@ See [Theming](theming.md) for the full walkthrough.
 `custom` tokens: `primary_color`, `background_color`, `text_color`, `font_family`,
 `radius` (e.g. `"12px"`), `shadow` (`"none" | "small" | "medium" | "large"`).
 
-## `seo`
+## Plugin blocks
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `title` | string | Document `<title>`. Defaults to `profile.name`. |
-| `description` | string | Meta + Open Graph description. Defaults to `profile.tagline`. |
-| `image` | string | Social preview image (1200×630 recommended). Path or URL. |
-| `url` | string | Canonical / site base URL — used for absolute OG/JSON-LD URLs. |
-| `twitter` | string | `twitter:site` handle (with or without a leading `@`). |
-| `lang` | string | Document language. Default `"en"`. |
-| `favicon` | string | Favicon path/URL; otherwise a generated inline-SVG favicon is used. |
-
-## `analytics`
-
-Everything defaults to disabled. No tracking happens unless you opt in.
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| `provider` | `"none" \| "plausible" \| "umami" \| "google"` | Default `"none"`. |
-| `plausible_domain` | string | **Required when `provider` is `plausible`.** |
-| `umami_website_id` | string | **Required when `provider` is `umami`.** |
-| `google_analytics_id` | string | **Required when `provider` is `google`.** |
-| `click_counter_endpoint` | string | Optional self-hosted click counter; never identifies users. |
-
-## `plugins`
-
-See [Plugins](plugins.md).
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| `github_repos` | string[] | Repos as `owner/repo` — renders stars + latest release. |
-| `youtube_channel` | string | Channel id — renders a latest-video card. |
-| `rss_feed` | string | Feed URL — renders the latest items. |
-| `rss_limit` | number | RSS items to render. Default `3`. |
-| `show_last_updated` | boolean | Show a "last updated" footer line. Default `false`. |
-| `footer_label` | string | Custom Markdown footer line (overrides the default note). |
-
-## `sections[]`
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| `title` | string | Optional heading above the body. |
-| `body` | string | Markdown body. |
-| `placement` | `"before" \| "after"` | Relative to the link list. Default `after`. |
+See [Plugins](plugins.md). A `{ "format": "repos", "repos": ["owner/repo", …] }` block is
+the only built-in plugin anchor: at build/boot it is replaced in place by a GitHub section
+(stars + latest release). There is no global `plugins` section — the block carries its own
+data, and footer options live in [`footer`](#footer).
 
 ## Validation rules (semantic)
 
 Beyond the structural types, `parseAndValidate` enforces:
 
-- every `links[].url` is a valid absolute URL;
-- `links` is non-empty and every `title` is non-empty;
-- `avatar` ⇒ `avatar_alt` is required;
-- a `theme.preset` is required and non-empty;
-- the analytics id required by the chosen `provider` is present;
-- `plugins.github_repos` entries are `owner/repo`.
+- every block sets a known `format`, and its fields satisfy that format's requirements
+  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, a `repos` block
+  needs at least one `owner/repo`, a link format needs `title`+`url`);
+- `blocks` contains at least one link block (`row`/`button`/`card`) or a `repos` block —
+  the page is never empty;
+- every link `url` is a valid absolute URL;
+- `image` ⇒ `image_alt` (figure block and link thumbnail) and `avatar` ⇒ `avatar_alt`;
+- `profile.hide` only contains known screen-field names;
+- `profile.url`, when set, is a valid http(s) URL;
+- `footer.updated`, when set, is a real `YYYY-MM-DD` calendar date;
+- `repos` entries are `owner/repo`;
+- a `theme.preset` is required and non-empty; theme colors are plain hex, and CSS token
+  values carry no structural characters (`< > { } ; "`).
 
 ## Minimal example
 
 ```jsonc
 {
   "profile": { "name": "Jane Doe" },
-  "links": [{ "title": "GitHub", "url": "https://github.com/janedoe" }],
+  "blocks": [
+    { "format": "row", "title": "GitHub", "url": "https://github.com/janedoe" }
+  ],
   "theme": { "preset": "minimal-dark" }
 }
 ```

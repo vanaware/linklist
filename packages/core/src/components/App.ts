@@ -1,16 +1,19 @@
 /**
  * @file App.ts
- * @description Root component: composes the profile header, before-sections,
- * the link list, after-sections and the optional footer from the validated
- * config. Reads from the `configSignal` store unless a `config` prop is passed
- * (the latter keeps server-side rendering and tests pure/deterministic).
+ * @description Root component: composes the profile header and the page's
+ * content from `config.blocks` — the ordered flow (link blocks, Markdown
+ * sections, figures, resolved plugin output) where declaration order IS display
+ * order. Consecutive link blocks render together as one list. Reads from the
+ * `configSignal` store unless a `config` prop is passed (the latter keeps
+ * server-side rendering and tests pure/deterministic).
  */
 import { html, } from "htm/preact";
 import type { VNode, } from "preact";
 import { configSignal, } from "./state.ts";
-import type { LinklistConfig, } from "../lib/types.ts";
+import type { Block, LinkBlock, LinklistConfig, } from "../lib/types.ts";
 import { ContentSection, } from "./ContentSection.ts";
 import { Footer, } from "./Footer.ts";
+import { ImageBlock, } from "./ImageBlock.ts";
 import { LinkList, } from "./LinkList.ts";
 import { ProfileHeader, } from "./ProfileHeader.ts";
 
@@ -18,13 +21,44 @@ import { ProfileHeader, } from "./ProfileHeader.ts";
 export interface AppProps {
   /** Config to render; falls back to the shared `configSignal` store. */
   config?: LinklistConfig;
-  /** Build timestamp for the footer (defaults to now). */
-  timestamp?: number;
 }
 
 /**
- * Root component: composes profile header, before-sections, link list,
- * after-sections and the optional footer into the BeerCSS page tree.
+ * Render the ordered blocks, grouping each run of consecutive link blocks into
+ * a single {@linkcode LinkList}. Section and image blocks break the run and
+ * render inline; leftover plugin blocks (already expanded by `resolveBlocks`)
+ * are skipped.
+ */
+function renderBlocks(blocks: Block[],): VNode[] {
+  const nodes: VNode[] = [];
+  let run: LinkBlock[] = [];
+  const flush = () => {
+    if (run.length === 0) return;
+    nodes.push(
+      html`<${LinkList} blocks=${run} key=${`links-${nodes.length}`} />`,
+    );
+    run = [];
+  };
+  blocks.forEach((block, i,) => {
+    if (block.type === "link") {
+      run.push(block,);
+      return;
+    }
+    flush();
+    if (block.type === "section") {
+      nodes.push(html`<${ContentSection} section=${block} key=${`b${i}`} />`,);
+    } else if (block.type === "image") {
+      nodes.push(html`<${ImageBlock} block=${block} key=${`b${i}`} />`,);
+    }
+  },);
+  flush();
+  return nodes;
+}
+
+/**
+ * Root component: renders the profile header, then every `blocks` entry in
+ * order (plugin blocks are expected to be pre-resolved via `resolveBlocks`;
+ * any left over render nothing), then the optional footer.
  *
  * @param props - Optional `config` (otherwise read from `configSignal`).
  * @returns The rendered page VNode, or an empty-state notice without a config.
@@ -35,9 +69,6 @@ export function App(props: AppProps = {},): VNode {
     return html`<div class="empty">No configuration loaded.</div>`;
   }
 
-  const sections = config.sections ?? [];
-  const before = sections.filter((s,) => s.placement === "before");
-  const after = sections.filter((s,) => s.placement !== "before");
   const mode = config.theme?.mode ?? "auto";
 
   return html`
@@ -47,21 +78,12 @@ export function App(props: AppProps = {},): VNode {
       data-mode=${mode}
     >
       <${ProfileHeader} profile=${config.profile} />
-      ${before.map((section, i,) =>
-        html`<${ContentSection} section=${section} key=${`before-${i}`} />`
-      )}
-      <${LinkList} links=${config.links} />
-      ${after.map((section, i,) =>
-        html`<${ContentSection} section=${section} key=${`after-${i}`} />`
-      )}
-      ${config.plugins?.show_last_updated
-        ? html`
-          <${Footer}
-            label=${config.plugins.footer_label}
-            timestamp=${props.timestamp ?? Date.now()}
-          />
-        `
-        : null}
+      ${renderBlocks(config.blocks,)}
+      <${Footer}
+        showUpdated=${config.footer?.show_last_updated}
+        updated=${config.footer?.updated}
+        label=${config.footer?.label}
+      />
     </main>
   `;
 }
