@@ -31,7 +31,6 @@ const config: LinklistConfig = {
       link: { title: "Site", url: "https://jane.dev", },
     },
     { type: "section", title: "About", body: "**secret prose**", },
-    { type: "plugin", name: "github-repos", repos: ["a/b",], },
   ],
   theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
 };
@@ -62,10 +61,9 @@ describe("renderIndexHtml", () => {
     const versioned = renderIndexHtml(config, { version: "v9.9.9", },);
     assertStringIncludes(versioned, "Made with linklist · v9.9.9",);
   });
-  it("keeps section bodies and plugin anchors out of the fallback", () => {
+  it("keeps section bodies out of the fallback", () => {
     assertStringIncludes(html, "Jane Doe",); // profile header still present
     assertEquals(html.includes("secret prose",), false,);
-    assertEquals(html.includes("github-repos",), false,);
   });
   it("honors profile.hide in the fallback", () => {
     const hidden: LinklistConfig = {

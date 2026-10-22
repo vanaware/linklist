@@ -54,8 +54,8 @@ function iconType(src: string,): string {
 /**
  * A no-JS fallback rendered straight from the config: the profile name, an
  * optional avatar/tagline and every link block as a plain anchor. Text/figure
- * blocks and plugin anchors are skipped (Markdown source has no place without
- * JS, plugin data is fetched at runtime anyway). It closes with the same
+ * blocks are skipped (Markdown source has no place without
+ * JS). It closes with the same
  * "Made with linklist" brand line the live footer always shows (the version is
  * the **package** version passed in at build). It lives inside `<noscript>`
  * so JavaScript users never see it, while crawlers, disabled-JS visitors and the

@@ -44,11 +44,10 @@ commit messages are written in **English**. No exceptions.
   state module. The few allowed `useEffect` calls are for post-commit DOM work only.
 - **Components**: keep UI modularized in `packages/core/src/components/`. There are no
   islands / `hydrateIslands()` — the page is a single client-rendered Preact tree.
-- **Everything in core**: the theme engine (`core/src/lib/theme.ts`), the plugin engine
-  (`core/src/plugins/engine.ts`) and the built-in plugins (`core/src/plugins/`) all live in
+- **Everything in core**: the theme engine (`core/src/lib/theme.ts`) lives in
   `packages/core`, alongside the CSS presets in `packages/core/themes`. There is no
-  separate themes or plugins package, and no runtime third-party `theme.script` /
-  `plugins.scripts` until the engine is stable.
+  separate themes package, and no runtime third-party `theme.script` hook until the
+  engine is stable.
 - **Markdown for user text**: end-user text (bio / about / section copy, link
   subtitle, footer) is authored as **Markdown** and rendered by the self-contained
   GFM → Preact VNode renderer in `core/src/components/markdown.ts` (`renderMarkdown` /
@@ -83,7 +82,7 @@ commit messages are written in **English**. No exceptions.
   baked into `index.html` at BUILD time by `packages/core/src/cli.ts build` (task
   `linklist:build`), using the pure builders in `lib/seo.ts` + `lib/generate.ts` — so
   crawlers and no-JS link-preview scrapers read real metadata. `linklist.js` then
-  hydrates the page body (theme, plugins, Preact) at runtime. There is NO runtime DOM
+  hydrates the page body (theme, Preact) at runtime. There is NO runtime DOM
   head-injection (`applyHead` was removed); the served shell already carries the head.
 
 ## 5. Testing Standard
@@ -91,7 +90,7 @@ commit messages are written in **English**. No exceptions.
 - **BDD Style**: tests use `@std/testing/bdd` (`describe` / `it`); assertions use
   `@std/assert`. Do NOT use raw `Deno.test()` for new tests.
 - **Testability**: pure validation/render logic is unit-tested without network;
-  plugins and IO-backed code are tested with injected/mocked I/O.
+  IO-backed code is tested with injected/mocked I/O.
 - **Command**: `deno task test` (or `deno task tests` for the full gate).
 
 ## 6. Architecture & SaaS Readiness
@@ -100,8 +99,7 @@ commit messages are written in **English**. No exceptions.
   filesystem/network. The only DOM-aware module is the browser entry
   (`core/src/entry.ts`, bundled to `linklist.js`, not exported from `mod.ts`);
   the little filesystem I/O the tooling needs lives in `scripts/`. This keeps
-  `core` reusable by a future hosted SaaS. Maintain `core` / `themes` / `plugins`
-  packages.
+  `core` reusable by a future hosted SaaS. Keep `core` self-contained.
 - **Build is declarative (buildit)**: the whole static-site build (clean output,
   copy the shell/themes/config, bundle the entry, stamp the version) is driven by
   `scripts/esbuild.jsonc` targets, not by a bespoke CLI command.

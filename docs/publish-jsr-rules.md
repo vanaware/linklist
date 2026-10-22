@@ -11,7 +11,7 @@
 ## Which packages are libraries
 
 - `@vanaware/linklist` (`packages/core`) — the engine: schema, validator, render
-  runtime, theme/markdown/SEO/plugin helpers, the built-in plugins and the CSS theme
+  runtime, theme/markdown/SEO helpers and the CSS theme
   presets (all folded into core). This is the **only** JSR publication candidate.
 - `@vanaware/linklist-server` (`packages/server`) — a local static file-server used for
   development preview and tests. It is **never** published: it is a dev aid, not a

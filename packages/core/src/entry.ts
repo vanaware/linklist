@@ -3,7 +3,7 @@
  * @description Browser entry point, bundled by buildit into `dist/linklist.js`.
  * It fetches `./config.json` from the static folder at runtime (resolved
  * relative to the document, so it works at a domain root OR under a subfolder),
- * validates it, resolves the built-in plugin blocks, applies the theme, and
+ * validates it, applies the theme, and
  * renders the full Preact `App` into `#app`. The document <head> metadata is NOT touched
  * here: it is finalized into `index.html` at build time (before publishing to
  * the static host), so crawlers and link-preview scrapers see it without JS.
@@ -12,8 +12,6 @@
  */
 import { h, render, } from "preact";
 import { App, } from "./components/App.ts";
-import { resolveBlocks, } from "./plugins/engine.ts";
-import { builtinExpanders, } from "./plugins/mod.ts";
 import { parseAndValidate, } from "./lib/schema.ts";
 import { setConfig, } from "./components/state.ts";
 import { resolveThemeCss, themeBodyClass, } from "./lib/theme.ts";
@@ -31,17 +29,6 @@ function messageOf(error: unknown,): string {
 /** Report a non-fatal warning (kept on one line, prefixed for the console). */
 function warn(message: string,): void {
   console.warn(`[linklist] ${message}`,);
-}
-
-/** Browser `fetchJson` for plugins: JSON in, throws on a non-2xx response. */
-async function fetchJson(url: string,): Promise<unknown> {
-  const response = await fetch(url, {
-    headers: { accept: "application/json", },
-  },);
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`,);
-  }
-  return await response.json();
 }
 
 /** Apply theme mode + tokens (and the bundled preset stylesheet). */
@@ -106,15 +93,9 @@ async function boot(): Promise<void> {
     return;
   }
 
-  // Built-in plugin expanders run per `plugin` block, each failure isolated so
-  // one bad fetch can't break the page. resolveBlocks splices the produced
-  // links/section blocks back in place, keeping the declared order final.
-  const blocks = await resolveBlocks(
-    base,
-    { fetchJson, warn, },
-    builtinExpanders,
-  );
-  const config = { ...base, blocks, };
+  // The validated config renders as-is. There is no runtime data fetching;
+  // interactive island blocks may arrive in a future release.
+  const config = base;
 
   setConfig(config,);
   await applyTheme(config,);

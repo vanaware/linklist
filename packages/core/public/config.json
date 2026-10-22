@@ -49,10 +49,6 @@
       "image": "./assets/cover.svg",
       "image_alt": "Illustration of a quill and terminal window",
       "caption": "Latest post: privacy-first tooling"
-    },
-    {
-      "format": "repos",
-      "repos": ["vanaware/linklist"]
     }
   ],
   "theme": {

@@ -13,12 +13,12 @@
 ## 🌟 Highlights
 
 - **One file, whole page**: everything — profile (identity + head metadata), the ordered
-  `blocks` flow (links as rows/buttons/cards, Markdown sections, figures, plugin data),
+  `blocks` flow (links as rows/buttons/cards, Markdown sections and figures),
   theme, footer — lives in a versioned `config.json`, validated with
   [ArkType](https://arktype.io).
 - **Static head + client-rendered body**: the build bakes the per-profile SEO `<head>`
   (title / OG / Twitter / JSON-LD) and the PWA `manifest.json` into a real `index.html`,
-  while `linklist.js` fetches `./config.json` at runtime, resolves plugin blocks, applies
+  while `linklist.js` fetches `./config.json` at runtime, applies
   the theme and renders the Preact app. Crawlers and link previews see the metadata without JS.
   Paths are relative, so it works at a domain root **or** a subfolder.
 - **100% Pure Deno**: no Node runtime and no `node_modules` workflow. The static build is
@@ -30,8 +30,6 @@
 - **Rich text where you want it**: Markdown (CommonMark + GFM) in the bio, tagline,
   section bodies, link subtitles and footer — rendered to real Preact VNodes, no
   `dangerouslySetInnerHTML`.
-- **Extensible engine**: the theme and plugin engines live in core, with a built-in
-  `github-repos` expander (stars + latest release). Add your own by extending core.
 - **Private by default**: no analytics or click tracking — there is none to opt into.
 
 ---
@@ -124,25 +122,6 @@ button ink and a AA-legible link tint per background. See [docs/theming.md](docs
 
 ---
 
-## 🔌 Plugins
-
-The plugin engine and its built-in expanders live in core. A plugin is a
-`{ "format": "repos" }` block that carries its own data; the engine fetches external data
-and replaces the block **in
-place**, so the declared `blocks` order is the final display order. The network is always
-injected (never a global), so it runs in the browser for the static site and can run at
-build time in a future hosted tier.
-
-The built-in `github-repos` expander renders repository stars and the latest release:
-
-```jsonc
-{
-  "blocks": [ /* … */, { "format": "repos", "repos": ["vanaware/linklist"] } ]
-}
-```
-
----
-
 ## 📁 Repository structure
 
 ```
@@ -154,8 +133,7 @@ The built-in `github-repos` expander renders repository stars and the latest rel
 │   │   │   ├── cli.ts          #   build + validate CLI (Cliffy; the file-writing edge)
 │   │   │   ├── version.ts      #   build-stamped APP_VERSION (generated)
 │   │   │   ├── lib/            #   pure engine: types, schema, theme, seo, generate
-│   │   │   ├── components/     #   Preact UI + signals + markdown renderer
-│   │   │   └── plugins/        #   plugin engine + built-in plugins
+│   │   │   └── components/     #   Preact UI + signals + markdown renderer
 │   │   ├── schema/             #   config.schema.json (published for editors + the site)
 │   │   ├── themes/             #   BeerCSS theme presets (minimal-dark, light-simple)
 │   │   └── public/             #   index.html shell, config.json, manifest, favicon, robots
@@ -194,7 +172,6 @@ Full guides live in [`docs/`](docs):
 - [Getting started](docs/guide.md)
 - [Configuration reference](docs/configuration.md)
 - [Theming](docs/theming.md)
-- [Plugins](docs/plugins.md)
 - [Deploy](docs/deploy.md)
 - [API reference](docs/api-reference.md)
 - [Site templates](docs/templates/README.md) — starter `config.json` files

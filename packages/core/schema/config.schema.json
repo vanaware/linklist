@@ -50,27 +50,12 @@
         "caption": { "type": "string" }
       }
     },
-    "ReposBlock": {
-      "description": "A built-in plugin anchor carrying its own `repos` (`format: \"repos\"`).",
-      "type": "object",
-      "required": ["format", "repos"],
-      "additionalProperties": false,
-      "properties": {
-        "format": { "const": "repos" },
-        "repos": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" }
-        }
-      }
-    },
     "Block": {
       "description": "A pure block: it names one predefined `format` and carries that format's fields.",
       "oneOf": [
         { "$ref": "#/definitions/LinkBlock" },
         { "$ref": "#/definitions/TextBlock" },
-        { "$ref": "#/definitions/FigureBlock" },
-        { "$ref": "#/definitions/ReposBlock" }
+        { "$ref": "#/definitions/FigureBlock" }
       ]
     }
   },
@@ -109,7 +94,7 @@
       "items": { "$ref": "#/definitions/Block" },
       "contains": {
         "properties": {
-          "format": { "enum": ["row", "button", "card", "repos"] }
+          "format": { "enum": ["row", "button", "card"] }
         },
         "required": ["format"]
       },

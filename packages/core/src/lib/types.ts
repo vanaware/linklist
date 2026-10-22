@@ -119,16 +119,15 @@ export interface ContentSection {
 /**
  * The predefined block presentations an author picks from with `block.format`.
  * Each format implies the content fields it needs (link → url/title, text →
- * body, figure → image, repos → repos); the validator maps it to the matching
- * render shape below.
+ * body, figure → image); the validator maps it to the matching render shape
+ * below.
  */
 export type BlockFormat =
   | "row"
   | "button"
   | "card"
   | "text"
-  | "figure"
-  | "repos";
+  | "figure";
 
 /** Ordered-flow block: a single link, presented per its `format`. */
 export interface LinkBlock {
@@ -162,26 +161,8 @@ export interface ImageBlock {
   caption?: string;
 }
 
-/**
- * Ordered-flow block: a built-in plugin anchor that carries its OWN data.
- * The `repos` list is expanded in place at runtime by the matching
- * `BlockExpander` (see `plugins/engine.ts`); empty repos render nothing.
- */
-export interface PluginBlock {
-  /** Block discriminant (assigned by the validator's block classifier). */
-  type: "plugin";
-  /** Built-in plugin id, e.g. "github-repos". */
-  name: string;
-  /** Repos (`owner/repo`) to render as stars + latest release. */
-  repos: string[];
-}
-
 /** One item of the page's ordered content (`config.blocks`). */
-export type Block =
-  | LinkBlock
-  | SectionBlock
-  | ImageBlock
-  | PluginBlock;
+export type Block = LinkBlock | SectionBlock | ImageBlock;
 
 /** Top-level configuration object for a linklist site (shape v2). */
 export interface LinklistConfig {
@@ -189,7 +170,7 @@ export interface LinklistConfig {
   version?: string;
   /** Identity + head metadata: name, tagline, bio, avatar, url, twitter, … */
   profile: Profile;
-  /** The page's content in final display order (link / section / image / plugin). */
+  /** The page's content in final display order (link / section / image). */
   blocks: Block[];
   /** Preset + mode + token overrides for the page appearance. */
   theme: ThemeConfig;

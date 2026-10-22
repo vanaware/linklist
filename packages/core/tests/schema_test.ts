@@ -205,41 +205,14 @@ describe("validateConfig — block classification by format", () => {
     );
     assertStringIncludes(noAlt, "image_alt",);
   });
-
-  it("classifies a `repos` block as the github-repos plugin", () => {
-    const result = validateConfig(
-      withBlocks([{ format: "repos", repos: ["vanaware/linklist",], },],),
-    );
-    assert(result.ok, JSON.stringify(result,),);
-    if (result.ok) {
-      const block = result.data.blocks[0];
-      assertEquals(block?.type, "plugin",);
-      if (block?.type === "plugin") {
-        assertEquals(block.name, "github-repos",);
-        assertEquals(block.repos, ["vanaware/linklist",],);
-      }
-    }
-  });
-
-  it("rejects an empty `repos` list", () => {
-    const joined = errorsOf(withBlocks([{ format: "repos", repos: [], },],),);
-    assertStringIncludes(joined, "owner/repo",);
-  });
 });
 
 describe("validateConfig — semantic cross-field rules", () => {
-  it("requires at least one link or repos block", () => {
+  it("requires at least one link block", () => {
     const joined = errorsOf(
       withBlocks([{ format: "text", title: "Only prose", body: "hi", },],),
     );
     assertStringIncludes(joined, "at least one",);
-  });
-
-  it("accepts a page whose only link is a repos block", () => {
-    const result = validateConfig(
-      withBlocks([{ format: "repos", repos: ["a/b",], },],),
-    );
-    assert(result.ok, JSON.stringify(result,),);
   });
 
   it("rejects a link block without a title", () => {
@@ -258,13 +231,6 @@ describe("validateConfig — semantic cross-field rules", () => {
       },],),
     );
     assertStringIncludes(joined, "not a valid http(s) URL",);
-  });
-
-  it("validates repos entries as owner/repo", () => {
-    const joined = errorsOf(
-      withBlocks([{ format: "repos", repos: ["not-a-repo",], },],),
-    );
-    assertStringIncludes(joined, "owner/repo",);
   });
 
   it("rejects a non-http profile.url override", () => {

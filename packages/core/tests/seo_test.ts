@@ -71,7 +71,6 @@ describe("buildJsonLd", () => {
           format: "card",
           link: { title: "C", url: "https://c.test", },
         },
-        { type: "plugin", name: "github-repos", repos: ["a/b",], },
       ],
     },);
     assertEquals(ld.sameAs, [

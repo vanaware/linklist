@@ -23,11 +23,11 @@ next task.
   per-profile SEO `<head>`, the PWA `manifest.json` and `robots.txt` into real files
   (via `core/src/lib/generate.ts`), so crawlers and link-preview scrapers read the
   metadata **without JavaScript**. `index.html` also ships a generic `<noscript>`
-  Linklist fallback listing the `links` blocks in declared order (sections and plugin
-  anchors are skipped; `profile.hide` is honored there too). At runtime `linklist.js`
+  Linklist fallback listing the `links` blocks in declared order (sections and figures
+  are skipped; `profile.hide` is honored there too). At runtime `linklist.js`
   (from
   `core/src/entry.ts`) fetches `./config.json` (relative, so it works at a domain root
-  OR subfolder), validates it, resolves plugin blocks, applies the theme and hydrates the
+  OR subfolder), validates it, applies the theme and hydrates the
   Preact `App` into `#app` — it no longer injects the head (`applyHead`/`headFragment` are
   gone). The config is still NEVER embedded; no-JS visitors get the `<noscript>`
   fallback only.
@@ -45,17 +45,16 @@ next task.
   `public/{index.html,manifest.json,robots.txt}` are build artifacts and are
   **git-ignored** (regenerated on every build, so a fresh clone needs no manual step).
 - **Markdown is allowed in**: `profile.bio` / `tagline`, dedicated about/section
-  blocks, per-link `subtitle`, and the footer line (not plugin output areas, for now).
+  blocks, per-link `subtitle`, and the footer line.
 - **Config**: a single `config.json` (JSON, not YAML) validated with **ArkType**
   (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`. **Content
   model** — _pure blocks_: each `config.blocks` entry is a single self-contained item
   that names a predefined `format` — `row`/`button`/`card` (a link, needs `title`+`url`),
-  `text` (a Markdown section, needs `body`/`markdown`), `figure` (needs `image`+`image_alt`),
-  `repos` (the GitHub plugin, needs a non-empty `owner/repo` list). The validator
+  `text` (a Markdown section, needs `body`/`markdown`) or `figure` (needs `image`+`image_alt`).
+  The validator
   (`lib/schema.ts` `classifyBlock`) switches on `format`, checks that format's required
   fields, and builds a discriminated render shape — so downstream code still switches on
-  `block.type`: `link` (carrying its `format` + a `LinkItem`), `section`, `image`, `plugin`
-  (`repos`). There is no `type` key and no nesting (no `links: []` array) in the authored
+  `block.type`: `link` (carrying its `format` + a `LinkItem`), `section` or `image`. There is no `type` key and no nesting (no `links: []` array) in the authored
   config; consecutive `link` blocks group into one list on screen, any other block breaks
   the run. `profile` doubles as the head-metadata source: optional head-only
   overrides `title`/`description`/`image`/`url`/`twitter`/`lang`/`favicon` fall back to
@@ -76,7 +75,7 @@ next task.
   defaults to the sample config; formerly `scripts/validate.ts`, now deleted). Drive
   them with `deno task linklist:build` and `deno task validate-config [path]`.
 - **JSR public surface = pure engine only**: `mod.ts` exports types, validation
-  (minus `configType`), theme/SEO/generate helpers, the plugin contract + built-ins and
+  (minus `configType`), theme/SEO/generate helpers and
   the CLI root. The Preact runtime (`components/`, `markdown.ts`, `state.ts`) is
   deliberately internal: `deno doc --lint` walks the FULL type graph of every export,
   and npm-hosted graphs (preact, @preact/signals-core, arktype) are undocumented
@@ -91,13 +90,11 @@ next task.
   `.github/workflows/jsr-publish.yml` is the **release gate** (tests → lint:doc →
   sanitize-version → README check → publish dry-run → publish, on a `v*.*` tag); `packages/core/dist/` stays git-tracked on purpose (JSR publishes only
   tracked files).
-- **Themes & built-in plugins live in core**: BeerCSS presets are selectable via
+- **Themes live in core**: BeerCSS presets are selectable via
   `config.theme.preset` + token overrides and live in
   `packages/core/themes/{minimal-dark,light-simple}.css`, merged with `config.theme.custom`
-  by `core/src/lib/theme.ts`. The plugin engine (`core/src/plugins/engine.ts`) and the default plugins
-  (`core/src/plugins/`, exporting `builtinPlugins`) are also in core — there is **no**
-  separate themes or plugins package. There are no runtime third-party extension hooks
-  (`theme.script` / `plugins.scripts`) until the engine is stable.
+  by `core/src/lib/theme.ts`. There is **no** separate themes package, and no runtime
+  third-party extension hook (`theme.script`) until the engine is stable.
 - **Language**: all code, comments, logs, tests and docs are written in English.
 
 ## Milestones
@@ -305,24 +302,28 @@ next task.
   still switches on `block.type`. Formats: `row`/`button`/`card` (a link, need
   `title`+`url`) → `LinkBlock { type: "link", format, link }`; `text` (needs
   `body`/`markdown`) → `section`; `figure` (needs `image`+`image_alt`) → the standalone
-  `image` block (`ImageBlock` + `.block-image` in both presets); `repos` (non-empty
-  `owner/repo` list) → `plugin`. There is no `type` key and no nesting (the old
+  `image` block (`ImageBlock` + `.block-image` in both presets). There is no `type` key and no nesting (the old
   `links: []` array is gone); consecutive `link` blocks group into one list on screen
   (`App.renderBlocks`), any other block breaks the run, and the link `format` selects the
   presentation via an `is-button`/`is-card` variant class (row = bare). `profile` doubles
   as the head-metadata source (optional `title`/`description`/`image`/`url`/`twitter`/
   `lang`/`favicon` falling back to the screen fields); there is no analytics or tracking;
   footer options live in a `footer` group; `profile.hide` is the single on-screen list
-  and per-link `image`/`image_alt` thumbnails are styled in both presets. The plugin
-  engine runs per-block expanders: `BlockExpander` + async
-  `resolveBlocks(config, ctx, expanders)` (`github_repos.ts` exports
-  `githubReposExpander`; `entry.ts` runs `builtinExpanders`; the static build never runs
-  plugins). `mod.ts` exposes `LinkBlock`/`BlockFormat`/`ImageBlock`/`FooterConfig`/
-  `resolveBlocks`/`BlockExpander`/`builtinExpanders`. No backward-compatibility layer is
+  and per-link `image`/`image_alt` thumbnails are styled in both presets. `mod.ts` exposes
+  `LinkBlock`/`BlockFormat`/`ImageBlock`/`FooterConfig`. No backward-compatibility layer is
   retained. Gates green: `tests` (25 suites / 90 steps — per-`format` classification,
   required-field and semantic cases), `lint:doc`, `linklist:build` + `denobuild` (head
   from merged `profile`, `sameAs`/noscript via link blocks, card CSS shipped to dist all
   verified).
+- ✅ **M8b** — Plugin subsystem removed (breaking). Deleted the entire plugin engine
+  (`core/src/plugins/` — `engine.ts`, `github_repos.ts`, `mod.ts`), the `repos` block
+  `format`, the `PluginBlock` type and the runtime `resolveBlocks`/`BlockExpander`/
+  `builtinExpanders` surface (dropped from `mod.ts`, `types.ts`, `schema.ts`, `entry.ts`,
+  `config.schema.json` and the sample config), plus `docs/plugins.md` and the three plugin
+  test suites. `entry.ts` now renders the validated config as-is (no runtime data
+  fetching). No backward-compatibility layer is retained — this is a breaking release.
+  Interactive content is planned to return as island blocks (see M9). Gates: `tests`,
+  `check:all`, `lint:doc`, `validate` and `denobuild` green.
 - ⏭️ **M9 (roadmap — not started)** — Island blocks: let a `config.blocks` entry declare an
   interactive island (a Preact component + signals) that hydrates in place, as
   `@vanaware/mdBlog` does. Precondition already met: `preact` + `@preact/signals` stay in

@@ -86,24 +86,10 @@ dropped, so the output stays XSS-safe.
 Every block is a **pure, self-contained item** that names one predefined `format`. The
 `format` decides both how it renders and which fields it needs: `row`/`button`/`card` are
 link formats (need `title` + `url`), `text` is a Markdown section, `figure` a standalone
-image, and `repos` the GitHub plugin. The order of `blocks` is the order on screen — links,
+image. The order of `blocks` is the order on screen — links,
 sections and figures interleave freely (consecutive link blocks group into one list).
 
-## 7. Extend with data
-
-Add a `{ "format": "repos" }` block wherever you want the built-in GitHub plugin to show
-stars and the latest release of repos you maintain (the block carries its own data):
-
-```jsonc
-{
-  "blocks": [ /* … */, { "format": "repos", "repos": ["vanaware/linklist"] } ]
-}
-```
-
-See [Plugins](plugins.md) for the contract and for loading third-party plugin/theme
-scripts at runtime.
-
-## 8. Build for production
+## 7. Build for production
 
 ```bash
 deno task esbuild     # esbuild engine    → packages/server/build/dist
@@ -117,7 +103,7 @@ Both first run `deno task linklist:build`, which generates `index.html`,
 The output in `packages/server/build/dist` is fully self-contained and uses relative
 paths, so it works at a domain root **or** under a project-page subfolder.
 
-## 9. Deploy
+## 8. Deploy
 
 - **GitHub Pages**: push a `v*.*` tag (or run the *Deploy Example to GitHub Pages*
   workflow) — see [Deploy](deploy.md).
@@ -129,6 +115,5 @@ paths, so it works at a domain root **or** under a project-page subfolder.
 
 - [Configuration reference](configuration.md)
 - [Theming](theming.md)
-- [Plugins](plugins.md)
 - [Deploy](deploy.md)
 - [API reference](api-reference.md)

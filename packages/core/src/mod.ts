@@ -8,8 +8,8 @@
  * The public API is the pure engine: the config types (`lib/types.ts`) and
  * validator (`lib/schema.ts`), the theme helpers (`lib/theme.ts`), the SEO/head
  * builders (`lib/seo.ts`), the static-file generators (`lib/generate.ts`) that
- * bake a config into `index.html` / `manifest.json` / `robots.txt`, the plugin
- * contract + built-ins, and the `linklist` CLI (`cli.ts` — build + validate,
+ * bake a config into `index.html` / `manifest.json` / `robots.txt`, and the
+ * `linklist` CLI (`cli.ts` — build + validate,
  * exported as command objects; importing them never runs anything).
  *
  * Deliberately NOT public: the Preact rendering runtime (`components/`,
@@ -30,7 +30,6 @@ export type {
   LinkBlock,
   LinkItem,
   LinklistConfig,
-  PluginBlock,
   Profile,
   ProfileField,
   SectionBlock,
@@ -72,16 +71,6 @@ export {
   renderRobotsTxt,
 } from "./lib/generate.ts";
 export type { GeneratedFile, } from "./lib/generate.ts";
-
-// Block-expansion contract (runs in the browser for the static site, at build
-// for SaaS; the network always stays injected, never a global). The ordered
-// `blocks` flow is where plugin output lands: `resolveBlocks` expands each
-// `plugin` block's own data in place via a matching `BlockExpander`.
-export { resolveBlocks, } from "./plugins/engine.ts";
-export type { BlockExpander, PluginContext, } from "./plugins/engine.ts";
-
-// Built-in expanders (the default data contributions core ships with).
-export { builtinExpanders, githubReposExpander, } from "./plugins/mod.ts";
 
 // Build/validate CLI (Cliffy; parsing only runs via `deno run`). Only the
 // root program and the reusable writer are public: subcommand instances carry

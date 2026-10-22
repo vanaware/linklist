@@ -15,7 +15,7 @@ your editor.
 | --- | --- | --- | --- |
 | `version` | string | no | Optional schema version stamp (recommended: `"2"`). |
 | `profile` | object | **yes** | Identity block rendered at the top **and** the source of the `<head>` metadata. |
-| `blocks` | array | **yes** | The ordered page content (see below). At least one link block (`row`/`button`/`card`) or a `repos` block. |
+| `blocks` | array | **yes** | The ordered page content (see below). At least one link block (`row`/`button`/`card`). |
 | `theme` | object | **yes** | Preset + mode + token overrides. |
 | `footer` | object | no | Optional "Last updated" note (a "Made with linklist" brand line always shows). |
 
@@ -84,15 +84,13 @@ link blocks are grouped into a single list on screen; any other block breaks the
 | `card` | an emphasized card link | `title`, `url` | same as `row` (usually with `image`) |
 | `text` | a Markdown content section | `body` (or `markdown`) | `title` |
 | `figure` | a standalone image/figure | `image`, `image_alt` | `caption` |
-| `repos` | the GitHub-repos plugin block | `repos` (`owner/repo` list) | — |
 
 ```jsonc
 "blocks": [
   { "format": "button", "title": "GitHub", "url": "https://github.com/janedoe", "icon": "github" },
   { "format": "card", "title": "Blog", "url": "https://janedoe.dev", "image": "./assets/cover.svg", "image_alt": "Blog cover" },
   { "format": "text", "title": "About", "body": "Markdown **here**" },
-  { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" },
-  { "format": "repos", "repos": ["vanaware/linklist"] }
+  { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" }
 ]
 ```
 
@@ -124,28 +122,20 @@ See [Theming](theming.md) for the full walkthrough.
 `custom` tokens: `primary_color`, `background_color`, `text_color`, `font_family`,
 `radius` (e.g. `"12px"`), `shadow` (`"none" | "small" | "medium" | "large"`).
 
-## Plugin blocks
-
-See [Plugins](plugins.md). A `{ "format": "repos", "repos": ["owner/repo", …] }` block is
-the only built-in plugin anchor: at build/boot it is replaced in place by a GitHub section
-(stars + latest release). There is no global `plugins` section — the block carries its own
-data, and footer options live in [`footer`](#footer).
-
 ## Validation rules (semantic)
 
 Beyond the structural types, `parseAndValidate` enforces:
 
 - every block sets a known `format`, and its fields satisfy that format's requirements
-  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, a `repos` block
-  needs at least one `owner/repo`, a link format needs `title`+`url`);
-- `blocks` contains at least one link block (`row`/`button`/`card`) or a `repos` block —
-  the page is never empty;
+  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, a link format needs
+  `title`+`url`);
+- `blocks` contains at least one link block (`row`/`button`/`card`) — the page is never
+  empty;
 - every link `url` is a valid absolute URL;
 - `image` ⇒ `image_alt` (figure block and link thumbnail) and `avatar` ⇒ `avatar_alt`;
 - `profile.hide` only contains known screen-field names;
 - `profile.url`, when set, is a valid http(s) URL;
 - `footer.updated`, when set, is a real `YYYY-MM-DD` calendar date;
-- `repos` entries are `owner/repo`;
 - a `theme.preset` is required and non-empty; theme colors are plain hex, and CSS token
   values carry no structural characters (`< > { } ; "`).
 

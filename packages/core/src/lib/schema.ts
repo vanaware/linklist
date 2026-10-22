@@ -7,10 +7,10 @@
  *
  * The authored `config.json` uses **pure blocks**: every `config.blocks` entry
  * is a single self-contained item that names a predefined `format` (`row` /
- * `button` / `card` / `text` / `figure` / `repos`). This module validates each
+ * `button` / `card` / `text` / `figure`). This module validates each
  * block's fields against its `format` and returns a fully discriminated
  * {@linkcode LinklistConfig} whose `blocks` carry a `type` tag. Everything
- * downstream (`App`, `generate.ts`, `plugins/engine.ts`) therefore switches on
+ * downstream (`App`, `generate.ts`) therefore switches on
  * `block.type`. Validation is pure: it takes an in-memory object (or raw JSON
  * text) and returns structured, path-pointed results — no filesystem or network
  * access (that lives in `entry.ts` / `cli.ts`).
@@ -93,7 +93,7 @@ const footerType = type({
 // report precise, per-format cross-field errors. Kept "inexact" so an
 // editor-only stray key does not fail parsing.
 const rawBlockType = type({
-  format: "'row' | 'button' | 'card' | 'text' | 'figure' | 'repos'",
+  format: "'row' | 'button' | 'card' | 'text' | 'figure'",
   "title?": "string",
   "url?": "string",
   "icon?": "string",
@@ -105,7 +105,6 @@ const rawBlockType = type({
   "markdown?": "string",
   "new_tab?": "boolean",
   "nofollow?": "boolean",
-  "repos?": "string[]",
 },);
 
 /** An authored block, before classification into a {@linkcode Block}. */
@@ -122,7 +121,6 @@ interface RawBlock {
   markdown?: string;
   new_tab?: boolean;
   nofollow?: boolean;
-  repos?: string[];
 }
 
 /** Structural shape of the authored config; `blocks` are still {@linkcode RawBlock}s. */
@@ -161,9 +159,6 @@ const HEX_COLOR = /^#([0-9a-fA-F]{3,8})$/;
 
 /** CSS-ish token values must never carry structural markup/terminator chars. */
 const CSS_UNSAFE = /[<>{};"]/;
-
-/** `owner/repo` (GitHub) shape. */
-const OWNER_REPO = /^[^/\s]+\/[^/\s]+$/;
 
 /** A calendar `YYYY-MM-DD` date (the footer's content last-updated stamp). */
 function isIsoDate(value: string,): boolean {
@@ -253,21 +248,6 @@ function classifyBlock(
         caption: block.caption,
       };
     }
-    case "repos": {
-      const repos = block.repos ?? [];
-      if (repos.length === 0) {
-        errors.push(`${at}: a "repos" block needs at least one "owner/repo"`,);
-        return null;
-      }
-      repos.forEach((repo, j,) => {
-        if (!OWNER_REPO.test(repo,)) {
-          errors.push(
-            `${at}.repos[${j}]: expected "owner/repo" (got "${repo}")`,
-          );
-        }
-      },);
-      return { type: "plugin", name: "github-repos", repos, };
-    }
     default:
       return null;
   }
@@ -284,13 +264,11 @@ function semanticErrors(
 ): string[] {
   const errors: string[] = [];
 
-  // The page must show at least one link (a row/button/card block) or a repos block.
-  const visible = blocks.filter((b,) =>
-    b.type === "link" || b.type === "plugin"
-  );
+  // The page must show at least one link (a row/button/card block).
+  const visible = blocks.filter((b,) => b.type === "link");
   if (visible.length === 0) {
     errors.push(
-      'blocks: at least one link block ("row", "button" or "card") or a "repos" block is required',
+      'blocks: at least one link block ("row", "button" or "card") is required',
     );
   }
 
@@ -346,7 +324,6 @@ function semanticErrors(
  *   profile: { name: "Jane" },
  *   blocks: [
  *     { format: "row", title: "Site", url: "https://jane.dev" },
- *     { format: "repos", repos: ["vanaware/linklist"] },
  *   ],
  *   theme: { preset: "minimal-dark" },
  * });

@@ -2,7 +2,7 @@
  * @file App.ts
  * @description Root component: composes the profile header and the page's
  * content from `config.blocks` — the ordered flow (link blocks, Markdown
- * sections, figures, resolved plugin output) where declaration order IS display
+ * sections and figures) where declaration order IS display
  * order. Consecutive link blocks render together as one list. Reads from the
  * `configSignal` store unless a `config` prop is passed (the latter keeps
  * server-side rendering and tests pure/deterministic).
@@ -26,8 +26,7 @@ export interface AppProps {
 /**
  * Render the ordered blocks, grouping each run of consecutive link blocks into
  * a single {@linkcode LinkList}. Section and image blocks break the run and
- * render inline; leftover plugin blocks (already expanded by `resolveBlocks`)
- * are skipped.
+ * render inline.
  */
 function renderBlocks(blocks: Block[],): VNode[] {
   const nodes: VNode[] = [];
@@ -57,8 +56,7 @@ function renderBlocks(blocks: Block[],): VNode[] {
 
 /**
  * Root component: renders the profile header, then every `blocks` entry in
- * order (plugin blocks are expected to be pre-resolved via `resolveBlocks`;
- * any left over render nothing), then the optional footer.
+ * order, then the optional footer.
  *
  * @param props - Optional `config` (otherwise read from `configSignal`).
  * @returns The rendered page VNode, or an empty-state notice without a config.

@@ -1,7 +1,7 @@
 # API reference — `@vanaware/linklist`
 
 The public surface is re-exported from `packages/core/src/mod.ts`. Core is **pure**: the
-public engine (`lib/` + `plugins/` + `cli.ts` pieces) performs no filesystem or network
+public engine (`lib/` + `cli.ts` pieces) performs no filesystem or network
 access — it returns types, strings and command objects. Side effects live only at two
 edges: the **browser entry** (`entry.ts`, bundled into `linklist.js`, *not* exported) and
 the **CLI writers** (`cli.ts`, exported as command objects that never run on import).
@@ -9,7 +9,7 @@ the **CLI writers** (`cli.ts`, exported as command objects that never run on imp
 ### Why `mod.ts` and the bundled `linklist.js` are two surfaces
 
 `index.html` loads exactly one script, `./linklist.js` — the bundle of `entry.ts`. It
-boots itself on import (fetch → validate → plugins → theme → render), so it
+boots itself on import (fetch → validate → theme → render), so it
 cannot be a library export: importing it would run all of that. `mod.ts` is the
 opposite contract — the same engine with **zero import-time side effects**, for
 embedding in your own tooling or the future SaaS tier:
@@ -42,8 +42,8 @@ Described in full in the [Configuration reference](configuration.md).
 | --- | --- |
 | `LinklistConfig` | Top-level config object (`blocks` is the ordered page content; `footer` optional). |
 | `Profile`, `LinkItem`, `ContentSection` | Identity (screen fields + head-only overrides + `hide`), links (incl. `image`/`image_alt`), Markdown bodies. |
-| `Block`, `LinkBlock`, `SectionBlock`, `ImageBlock`, `PluginBlock` | The `blocks[]` discriminated union the validator builds from each authored block's `format`. |
-| `BlockFormat` | `"row" \| "button" \| "card" \| "text" \| "figure" \| "repos"` — the predefined presentation each block names. |
+| `Block`, `LinkBlock`, `SectionBlock`, `ImageBlock` | The `blocks[]` discriminated union the validator builds from each authored block's `format`. |
+| `BlockFormat` | `"row" \| "button" \| "card" \| "text" \| "figure"` — the predefined presentation each block names. |
 | `FooterConfig` | Optional footer line (`show_last_updated`, `label`). |
 | `ProfileField` | `"tagline" \| "bio" \| "avatar" \| "location"` — values accepted by `profile.hide`. |
 | `ThemeConfig`, `ThemeTokens` | Appearance. |
@@ -55,7 +55,7 @@ Described in full in the [Configuration reference](configuration.md).
 Built on ArkType plus a **block classifier** and semantic cross-field checks: every
 authored `blocks[]` item names a `format`, and `validateConfig` builds each one's
 discriminated render shape (`row`/`button`/`card` → a `link`, `text` → a `section`,
-`figure` → an `image`, `repos` → a `plugin`) before returning the typed config.
+`figure` → an `image`) before returning the typed config.
 Pure — no I/O.
 
 ```ts
@@ -103,12 +103,8 @@ Not exported from `mod.ts` (npm type graph). Central store on `@preact/signals`
 (the project forbids `useState`/`useEffect` for global state).
 
 ```ts
-export { computed, signal } from "@preact/signals"
-
 const configSignal: Signal<LinklistConfig | null>   // null until setConfig()
 function setConfig(config: LinklistConfig | null): void
-const blocksSignal:  Computed<Block[]>              // [] before a config
-const themeSignal:  Computed<string>                // preset name (defaults "minimal-dark")
 ```
 
 ---
@@ -206,30 +202,6 @@ const linklistCommand: Command   // .command("build") + .command("validate [path
 
 ---
 
-## Plugins (`plugins/engine.ts`)
-
-The contract and orchestration. Full walkthrough in [Plugins](plugins.md).
-
-```ts
-interface PluginContext { fetchJson(url: string): Promise<unknown>; warn(message: string): void }
-interface BlockExpander {
-  name: string;
-  expand(repos: string[], ctx: PluginContext): Promise<Block[]>;  // blocks to splice in place
-}
-
-async function resolveBlocks(
-  config: LinklistConfig,
-  ctx: PluginContext,
-  expanders: BlockExpander[],
-): Promise<Block[]>
-```
-
-Core also ships its default expanders: `builtinExpanders` (the list `entry.ts` runs) and
-`githubReposExpander` are exported from `@vanaware/linklist` (from `plugins/mod.ts`).
-There is no separate plugins package, no global `plugins` section and no analytics.
-
----
-
 ## Version
 
 The version is not exported from `mod.ts`: `src/version.ts` is generated and
@@ -242,8 +214,7 @@ by the `Footer` component as `APP_VERSION`. Treat it as build metadata, not API.
 
 Not part of `mod.ts`. This is the bundle's `main`: it fetches `./config.json` (relative, so
 it works under any base path), runs `parseAndValidate`, feeds failures to an error view,
-otherwise resolves the built-in plugin blocks with `resolveBlocks` (each `repos` block is
-expanded in place), installs the config with `setConfig`, applies the theme (body class +
+otherwise installs the config with `setConfig`, applies the theme (body class +
 preset CSS + `theme.custom` tokens), and renders `<App/>`. The `<head>` is NOT touched here
 — it is finalized into `index.html` at build time. The body is client-rendered and the
 config is never embedded.
