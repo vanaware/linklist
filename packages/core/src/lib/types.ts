@@ -111,20 +111,26 @@ export interface ContentSection {
   title?: string;
   /** Markdown body, rendered by the app (see `components/markdown.ts`). */
   body?: string;
+  /** Render inside a BeerCSS `card` (border + discreet shadow), like islands. */
+  framed?: boolean;
 }
 
 /**
  * The predefined block presentations an author picks from with `block.format`.
  * Each format implies the content fields it needs (link → url/title, text →
  * body, figure → image, island → the island `name`); the validator maps it to
- * the matching render shape below.
+ * the matching render shape below. The `card_*` variants reuse a content
+ * format's fields but wrap the block in a BeerCSS `card` (border + discreet
+ * shadow), the same surface treatment islands get.
  */
 export type BlockFormat =
   | "row"
   | "button"
   | "card"
   | "text"
+  | "card_text"
   | "figure"
+  | "card_figure"
   | "island";
 
 /** Ordered-flow block: a single link, presented per its `format`. */
@@ -145,6 +151,8 @@ export interface SectionBlock {
   title?: string;
   /** Markdown body. */
   body?: string;
+  /** Render as a BeerCSS `card` (from `format: "card_text"`). */
+  framed?: boolean;
 }
 
 /**
@@ -159,6 +167,8 @@ export interface ImageBlock {
   image_alt: string;
   /** Optional caption shown under the image. */
   caption?: string;
+  /** Render as a BeerCSS `card` (from `format: "card_figure"`). */
+  framed?: boolean;
 }
 
 /**

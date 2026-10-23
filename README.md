@@ -13,7 +13,8 @@
 ## 🌟 Highlights
 
 - **One file, whole page**: everything — profile (identity + head metadata), the ordered
-  `blocks` flow (links as rows/buttons/cards, Markdown sections, figures and interactive
+  `blocks` flow (links as rows/buttons/cards, Markdown sections optionally
+  framed as cards, figures optionally framed as cards, and interactive
   islands),
   theme, footer — lives in a versioned `config.json`, validated with
   [ArkType](https://arktype.io).

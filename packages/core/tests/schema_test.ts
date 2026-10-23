@@ -156,9 +156,39 @@ describe("validateConfig — block classification by format", () => {
       if (section?.type === "section") {
         assertEquals(section.title, "About",);
         assertEquals(section.body, "hi",);
+        assertEquals(section.framed, false,); // plain text is not carded
       }
       if (bare?.type === "section") assertEquals(bare.body, "raw",);
     }
+  });
+
+  it("classifies a `card_text` block as a framed section (same fields as text)", () => {
+    const result = validateConfig(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        { format: "card_text", title: "Note", body: "hi", },
+      ],),
+    );
+    assert(result.ok, JSON.stringify(result,),);
+    if (result.ok) {
+      const block = result.data.blocks[1];
+      assertEquals(block?.type, "section",);
+      if (block?.type === "section") {
+        assertEquals(block.title, "Note",);
+        assertEquals(block.body, "hi",);
+        assertEquals(block.framed, true,); // card_text wraps in a card
+      }
+    }
+  });
+
+  it("rejects a `card_text` block with no body/markdown", () => {
+    const joined = errorsOf(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        { format: "card_text", title: "Empty", },
+      ],),
+    );
+    assertStringIncludes(joined, "body",);
   });
 
   it("rejects a `text` block with no body/markdown", () => {
@@ -191,8 +221,34 @@ describe("validateConfig — block classification by format", () => {
       if (block?.type === "image") {
         assertEquals(block.image, "./cover.svg",);
         assertEquals(block.caption, "c",);
+        assertEquals(block.framed, false,); // plain figure is not carded
       }
     }
+  });
+
+  it("classifies a `card_figure` block as a framed image", () => {
+    const result = validateConfig(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        { format: "card_figure", image: "./cover.svg", image_alt: "Cover", },
+      ],),
+    );
+    assert(result.ok, JSON.stringify(result,),);
+    if (result.ok) {
+      const block = result.data.blocks[1];
+      assertEquals(block?.type, "image",);
+      if (block?.type === "image") {
+        assertEquals(block.image, "./cover.svg",);
+        assertEquals(block.framed, true,); // card_figure wraps in a card
+      }
+    }
+  });
+
+  it("requires image_alt on a `card_figure` block too", () => {
+    const joined = errorsOf(
+      withBlocks([{ format: "card_figure", image: "./cover.svg", },],),
+    );
+    assertStringIncludes(joined, "image_alt",);
   });
 
   it("requires image and image_alt on a `figure` block", () => {

@@ -7,8 +7,9 @@
  *
  * The authored `config.json` uses **pure blocks**: every `config.blocks` entry
  * is a single self-contained item that names a predefined `format` (`row` /
- * `button` / `card` / `text` / `figure` / `island`). This module validates each
- * block's fields against its `format` and returns a fully discriminated
+ * `button` / `card` / `text` / `card_text` / `figure` / `card_figure` /
+ * `island`). This module validates each block's fields against its `format`
+ * and returns a fully discriminated
  * {@linkcode LinklistConfig} whose `blocks` carry a `type` tag. Everything
  * downstream (`App`, `generate.ts`) therefore switches on
  * `block.type`. Validation is pure: it takes an in-memory object (or raw JSON
@@ -89,7 +90,8 @@ const footerType = type({
 // report precise, per-format cross-field errors. Kept "inexact" so an
 // editor-only stray key does not fail parsing.
 const rawBlockType = type({
-  format: "'row' | 'button' | 'card' | 'text' | 'figure' | 'island'",
+  format:
+    "'row' | 'button' | 'card' | 'text' | 'card_text' | 'figure' | 'card_figure' | 'island'",
   "title?": "string",
   "url?": "string",
   "icon?": "string",
@@ -230,17 +232,26 @@ function classifyBlock(
       const link = buildLink(block, at, errors,);
       return link ? { type: "link", format: block.format, link, } : null;
     }
-    case "text": {
+    case "text":
+    case "card_text": {
       const body = block.body ?? block.markdown;
       if (body === undefined) {
-        errors.push(`${at}: a "text" block needs a "body" (or "markdown")`,);
+        errors.push(
+          `${at}: a "text"/"card_text" block needs a "body" (or "markdown")`,
+        );
         return null;
       }
-      return { type: "section", title: block.title, body, };
+      return {
+        type: "section",
+        title: block.title,
+        body,
+        framed: block.format === "card_text",
+      };
     }
-    case "figure": {
+    case "figure":
+    case "card_figure": {
       if (!block.image) {
-        errors.push(`${at}: a "figure" block needs an "image"`,);
+        errors.push(`${at}: a "figure"/"card_figure" block needs an "image"`,);
         return null;
       }
       if (!block.image_alt) {
@@ -252,6 +263,7 @@ function classifyBlock(
         image: block.image,
         image_alt: block.image_alt,
         caption: block.caption,
+        framed: block.format === "card_figure",
       };
     }
     case "island": {

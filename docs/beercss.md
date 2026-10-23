@@ -20,9 +20,9 @@ explain ~90% of it:
 
 1. **Components are driven by semantic HTML tags, not by wrapper classes.** Many
    elements are styled just by being the right tag: `<button class="button">`,
-   `<nav>`, `<header>`, `<footer>`, `<dialog>`, `<table>`, `<article class="card">`,
-   `<label>` around an input. You mostly add a base class to a real tag, then add
-   *modifier* classes.
+   `<nav>`, `<header>`, `<footer>`, `<dialog>`, `<table>`, `<article>` (the card
+   surface — see §7), `<label>` around an input. You mostly add a base class to a
+   real tag, then add *modifier* classes.
 2. **Helpers are small, single-purpose classes** (`round`, `elevate2`, `center-align`,
    `large`, `primary`) that you stack on any element. The official tip is literally:
    *"Try to use helpers first, before any custom CSS."*
@@ -295,8 +295,12 @@ Modifiers listed are the common ones; full helper set in §8.
   large extra`, `border`, `round`/`circle`/`square`, `fill`/`extend`/`none`,
   `responsive` (full-width), `horizontal`/`vertical`, `left`/`right`/`top`/`bottom`.
   FAB: `<a class="circle">` icon button; container-less links use `<a class="button">`.
-- **Card** — `<article class="card">…</article>`; sizes `small/medium/large`,
-  `border`, `round`/`no-round`/`left-round`…, `padding`/`no-padding`, `elevate*`.
+- **Card** — write `<article>…</article>`. **Heads-up: 3.7.12 has no `.card`
+  class** — the surface (`padding: 1rem`, `background: --surface-container-low`,
+  `box-shadow: var(--elevate1)`, `border-radius: .75rem`) is a **plain `article`
+  ELEMENT style**, so the effect comes from the tag, not any class; `class="card"`
+  is decorative only. Sizes via helpers (`small/medium/large`), `no-padding`,
+  `round`/`no-round`, `elevate*`; add these classes to the `<article>`.
 - **Badge / Chip** — `<span class="badge">` / `<span class="chip">` with `left/right/
   top/bottom`, shape (`circle`/`square`/`round`), `border`, `small/medium/large`,
   `horizontal/vertical` (chip).
@@ -408,7 +412,8 @@ Override the *config* and *color* tokens in `:root, body.light` / `body.dark` (�
   `box-sizing:border-box`)
 - round avatar / icon button → `.circle` + override `width/height` in CSS if you need
   it bigger than 48px
-- card / elevated panel → `<article class="card elevate2 round">`
+- card / elevated panel → `<article class="elevate2 round">` (**an `article`
+  element**, not a `.card` class — see §7 Card)
 - responsive N-up columns → `<div class="grid">` + `s12 m6 l3` children; tune
   gutters with a `*-space` class or by setting `---gap` (**never** `gap` alone)
 - horizontal toolbar of short controls → `<div class="row center-align">`

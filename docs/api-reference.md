@@ -54,9 +54,10 @@ Described in full in the [Configuration reference](configuration.md).
 
 Built on ArkType plus a **block classifier** and semantic cross-field checks: every
 authored `blocks[]` item names a `format`, and `validateConfig` builds each one's
-discriminated render shape (`row`/`button`/`card` → a `link`, `text` → a `section`,
-`figure` → an `image`, `island` → an `island` with a validated safe `name`) before
-returning the typed config.
+discriminated render shape (`row`/`button`/`card` → a `link`, `text`/`card_text` →
+a `section` (`card_text` sets `framed: true`), `figure`/`card_figure` → an `image`
+(`card_figure` sets `framed: true`), `island` → an `island` with a validated safe
+`name`) before returning the typed config.
 Pure — no I/O.
 
 ```ts

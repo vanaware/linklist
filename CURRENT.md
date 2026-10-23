@@ -373,6 +373,31 @@ next task.
   tests and docs (new `docs/beercss.md` reference). No backward-compatibility layer.
   Gates green: `fmt`/`check:all`/`test`/`lint:doc`/`validate`/`denobuild` + in-browser
   dark/light/auto check confirming `body.dark` and that islands follow the mode.
+- ✅ **M12** — Grid gutter parity + framed content blocks. Two follow-ups on M11:
+  (a) the BeerCSS `.grid` derives BOTH its `gap` and its 12-column track `calc()` from
+  the `---gap` custom property, so overriding only `gap` in `linklist-base.css` made
+  link buttons ~44px narrower than full-width siblings; fixed by setting `---gap: 0.75rem`
+  on `.linklist ul.grid` instead (verified flush at both mobile and desktop widths).
+  (b) Added two new `format`s — `card_text` and `card_figure` — that reuse `text`/`figure`
+  fields but wrap the block in a BeerCSS card (the same softly-elevated surface islands
+  get). KEY FACT: BeerCSS 3.7.12 has NO `.card` CLASS — the card look comes from the
+  `article` ELEMENT selector (`padding`, `background: --surface-container-low`, `box-shadow:
+  var(--elevate1)`, `border-radius`); `class="card"` is only an intent marker. So both framed
+  blocks render as `<article class="card block-framed">` (the figure stays nested inside as
+  `<figure class="block-image">` for semantics). `types.ts` `BlockFormat` union extended;
+  `SectionBlock`/`ImageBlock` carry an inferred `framed?: boolean` (set by `classifyBlock`);
+  `ContentSection.ts` and `ImageBlock.ts` emit the `article` wrapper when framed. The landmark
+  reset does NOT target `article`, so `.linklist .block-framed { margin: 1rem 0 }` gives rhythm
+  and `.block-framed .block-image { margin: 0 }` neutralizes the nested figure. `config.schema.json`
+  widened `TextBlock`/`FigureBlock` format from `const` to `enum`. Noscript fallback unchanged (it
+  still skips section/image, matching how islands skip too). Rewrote `docs/beercss.md` as a
+  418-line dual-audience guide (mental model, comparison with Tailwind/Bootstrap/CSS-Modules/
+  dynamic-colors, theming, verified gotchas, layout, component reference, helper index, token
+  list, AI cheatsheet). Refreshed `configuration.md`, `api-reference.md`, `guide.md`, root and
+  core READMEs, templates README, and the demo `public/config.json` (shows one
+  `card_text` and one `card_figure`). Gates green: `fmt`/`check:all`/`test` (90 steps) /
+  `denobuild`; in-browser confirms the framed `article` cards carry the elevation/padding and
+  align flush (527px) with islands/buttons at mobile and desktop widths, no horizontal overflow.
 
 ## Known environment note
 

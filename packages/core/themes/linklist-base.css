@@ -139,10 +139,11 @@ body {
   margin: 1rem 0;
 }
 
-/* Block headings (the About section title and island titles, authored as h5):
-   a single quiet, consistent sub-heading size rather than BeerCSS's page-level
-   default. */
+/* Block headings (the About section title, framed-block titles and island
+   titles, authored as h5): a single quiet, consistent sub-heading size rather
+   than BeerCSS's page-level default. */
 .linklist section h5,
+.linklist .block-framed h5,
 .linklist .block-island h5 {
   margin: 0 0 0.5rem;
   font-size: 1.15rem;
@@ -152,6 +153,21 @@ body {
 
 .linklist section {
   margin: 1rem 0;
+}
+
+/* Framed content blocks (`card_text` / `card_figure`) are rendered as
+   `<article class="card block-framed">`. BeerCSS's card look comes from the
+   `article` ELEMENT selector (padding, background `--surface-container-low`,
+   `box-shadow: var(--elevate1)`, border-radius) — there is NO `.card` class in
+   BeerCSS 3.7.12; the class name is only a marker. We add rhythm and neutralize
+   the inner `.block-image` margin (a nested figure would otherwise add its own
+   1rem vertical margin on top of the article's padding). */
+.linklist .block-framed {
+  margin: 1rem 0;
+}
+
+.linklist .block-framed .block-image {
+  margin: 0;
 }
 
 .linklist .block-image {

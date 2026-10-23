@@ -37,6 +37,11 @@
       "body": "I write about **privacy-first** tooling and the open web.\n\n- Deno & Preact\n- Accessibility"
     },
     {
+      "format": "card_text",
+      "title": "Pinned note",
+      "body": "Framed with the same bordered, softly-elevated surface an island gets — via `format: \"card_text\"`."
+    },
+    {
       "format": "island",
       "island": "Counter",
       "params": { "start": 3, "step": 2, "label": "Try an island" }
@@ -60,7 +65,7 @@
       "nofollow": true
     },
     {
-      "format": "figure",
+      "format": "card_figure",
       "image": "./assets/cover.svg",
       "image_alt": "Illustration of a quill and terminal window",
       "caption": "Latest post: privacy-first tooling"

@@ -85,8 +85,9 @@ dropped, so the output stays XSS-safe.
 
 Every block is a **pure, self-contained item** that names one predefined `format`. The
 `format` decides both how it renders and which fields it needs: `row`/`button`/`card` are
-link formats (need `title` + `url`), `text` is a Markdown section, `figure` a standalone
-image and `island` an interactive component. The order of `blocks` is the order on screen —
+link formats (need `title` + `url`), `text` is a Markdown section (`card_text` wraps it in
+a card), `figure` a standalone image (`card_figure` wraps it in a card) and `island` an
+interactive component. The order of `blocks` is the order on screen —
 links, sections, figures and islands interleave freely (consecutive link blocks group into
 one list).
 

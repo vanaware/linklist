@@ -26,12 +26,12 @@
       "then": { "required": ["image_alt"] }
     },
     "TextBlock": {
-      "description": "A Markdown content block (`format: \"text\"`).",
+      "description": "A Markdown content block (`format: \"text\"`), optionally framed as a BeerCSS card (`format: \"card_text\"`).",
       "type": "object",
       "required": ["format"],
       "additionalProperties": false,
       "properties": {
-        "format": { "const": "text" },
+        "format": { "enum": ["text", "card_text"] },
         "title": { "type": "string" },
         "body": { "type": "string" },
         "markdown": { "type": "string" }
@@ -39,12 +39,12 @@
       "anyOf": [{ "required": ["body"] }, { "required": ["markdown"] }]
     },
     "FigureBlock": {
-      "description": "A standalone image/figure (`format: \"figure\"`).",
+      "description": "A standalone image/figure (`format: \"figure\"`), optionally framed as a BeerCSS card (`format: \"card_figure\"`).",
       "type": "object",
       "required": ["format", "image", "image_alt"],
       "additionalProperties": false,
       "properties": {
-        "format": { "const": "figure" },
+        "format": { "enum": ["figure", "card_figure"] },
         "image": { "type": "string" },
         "image_alt": { "type": "string", "minLength": 1 },
         "caption": { "type": "string" }

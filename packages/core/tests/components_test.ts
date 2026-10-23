@@ -134,6 +134,39 @@ describe("App", () => {
     assertStringIncludes(html, "<figcaption",);
   });
 
+  it("wraps a framed (card_text / card_figure) block in a BeerCSS card", () => {
+    const framed: LinklistConfig = {
+      ...config,
+      blocks: [
+        {
+          type: "link",
+          format: "row",
+          link: { title: "A", url: "https://a.test", },
+        },
+        { type: "section", title: "Note", body: "pinned", framed: true, },
+        {
+          type: "image",
+          image: "./assets/figure.svg",
+          image_alt: "A figure",
+          framed: true,
+        },
+      ],
+    };
+    const page = toHtml(App({ config: framed, },),);
+    // BeerCSS's card look is the `article` ELEMENT (there is no `.card` class),
+    // so both framed blocks emit `<article class="card block-framed">`.
+    assertEquals(
+      page.split('<article class="card block-framed">',).length - 1,
+      2,
+    );
+    assertStringIncludes(page, "pinned",);
+    // The framed figure keeps its semantic `<figure class="block-image">` inside.
+    assertStringIncludes(page, '<figure class="block-image">',);
+    // Un-framed blocks (the base config) must NOT emit the framed article.
+    assertEquals(html.includes("block-framed",), false,);
+    assertStringIncludes(html, "<section>",); // plain About stays a <section>
+  });
+
   it("renders an island block as a hydration placeholder (name + props)", () => {
     assertStringIncludes(html, 'class="block-island"',);
     assertStringIncludes(html, 'data-island="Counter"',);

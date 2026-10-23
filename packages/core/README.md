@@ -71,7 +71,9 @@ A linklist site is one JSON file. Minimum viable config:
 
 `blocks` is the page in declared order. Every block is a **pure, self-contained item**
 naming one predefined `format`: `row`/`button`/`card` (a link, needs `title`+`url`),
-`text` (a Markdown section), `figure` (a standalone image) or `island` (an interactive
+`text` (a Markdown section) or `card_text` (the same, framed as a BeerCSS card),
+`figure` (a standalone image) or `card_figure` (the same, framed as a card),
+or `island` (an interactive
 component hydrated from `public/islands/`),
 interleaved freely. Everything
 else is optional: which profile fields show on screen (`profile.hide`), per-link thumbnails

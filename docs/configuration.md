@@ -83,7 +83,9 @@ link blocks are grouped into a single list on screen; any other block breaks the
 | `button` | a filled button link | `title`, `url` | same as `row` |
 | `card` | an emphasized card link | `title`, `url` | same as `row` (usually with `image`) |
 | `text` | a Markdown content section | `body` (or `markdown`) | `title` |
+| `card_text` | a Markdown section framed as a card (elevated surface) | `body` (or `markdown`) | `title` |
 | `figure` | a standalone image/figure | `image`, `image_alt` | `caption` |
+| `card_figure` | an image/figure framed as a card (elevated surface) | `image`, `image_alt` | `caption` |
 | `island` | an interactive component hydrated at runtime | `island` (file name) | `params` |
 
 ```jsonc
@@ -91,10 +93,22 @@ link blocks are grouped into a single list on screen; any other block breaks the
   { "format": "button", "title": "GitHub", "url": "https://github.com/janedoe", "icon": "github" },
   { "format": "card", "title": "Blog", "url": "https://janedoe.dev", "image": "./assets/cover.svg", "image_alt": "Blog cover" },
   { "format": "text", "title": "About", "body": "Markdown **here**" },
+  { "format": "card_text", "title": "Note", "body": "A pinned, carded paragraph" },
   { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" },
   { "format": "island", "island": "Counter", "params": { "start": 3, "step": 2 } }
 ]
 ```
+
+### Framed content (`card_text` / `card_figure`)
+
+`card_text` and `card_figure` take exactly the same fields as `text` and `figure`
+respectively — the only difference is presentation: the block is wrapped in an
+`<article>`, which is what BeerCSS styles as a **card** (padding, a tinted
+`--surface-container-low` background and a soft `--elevate1` shadow — note there
+is no `.card` *class*; the look is the `article` element itself). It gives the
+block the same softly-elevated surface an island gets. Use them to make a quote,
+a note or a highlight stand out from the plain flow without reaching for a full
+interactive island.
 
 ### Link fields (`row` / `button` / `card`)
 
@@ -142,7 +156,7 @@ per light/dark mode and are no longer author-tunable.
 Beyond the structural types, `parseAndValidate` enforces:
 
 - every block sets a known `format`, and its fields satisfy that format's requirements
-  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, an `island`
+  (a `text`/`card_text` block needs a body, a `figure`/`card_figure` needs `image`+`image_alt`, an `island`
   needs a safe `island` name, a link format needs `title`+`url`);
 - `blocks` contains at least one link block (`row`/`button`/`card`) — the page is never
   empty;
