@@ -34,11 +34,9 @@ export function Footer(
   const brand = brandText(APP_VERSION,);
 
   return html`
-    <footer class="footer">
-      ${note
-      ? html`<div class="footer-note"><${MarkdownText} text=${note} inline=${true} /></div>`
-      : null}
-      <div class="footer-brand">${brand}</div>
+    <footer class="footer small-text">
+      ${note ? html`<div><${MarkdownText} text=${note} inline=${true} /></div>` : null}
+      <div>${brand}</div>
     </footer>
   `;
 }

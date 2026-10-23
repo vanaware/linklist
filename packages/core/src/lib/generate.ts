@@ -52,39 +52,46 @@ function iconType(src: string,): string {
 }
 
 /**
- * A no-JS fallback rendered straight from the config: the profile name, an
- * optional avatar/tagline and every link block as a plain anchor. Text/figure
- * blocks are skipped (Markdown source has no place without
- * JS). It closes with the same
- * "Made with linklist" brand line the live footer always shows (the version is
- * the **package** version passed in at build). It lives inside `<noscript>`
- * so JavaScript users never see it, while crawlers, disabled-JS visitors and the
+ * A no-JS fallback rendered straight from the config using the SAME pure
+ * BeerCSS markup the live app emits (`.grid` of `.button` links, a `.circle`
+ * avatar), so crawlers and the first paint stay coherent with the hydrated page.
+ * Text/figure/island blocks are skipped (Markdown source and runtime-hydrated
+ * islands have no place without JS). It closes with the same "Made with
+ * linklist" brand line the live footer always shows (the version is the
+ * **package** version passed in at build). It lives inside `<noscript>` so
+ * JavaScript users never see it, while crawlers, disabled-JS visitors and the
  * PWA splash still get real content.
  */
 function noScriptFallback(config: LinklistConfig, version: string,): string {
   const { profile, } = config;
   const hidden = new Set(profile.hide ?? [],);
   const avatar = profile.avatar && !hidden.has("avatar",)
-    ? `<img src="${escapeHtml(profile.avatar,)}" alt="${escapeHtml(profile.avatar_alt ?? "",)
-    }" width="96" height="96">`
+    ? `<img class="circle" src="${escapeHtml(profile.avatar,)}" alt="${escapeHtml(profile.avatar_alt ?? "",
+    )}" width="120" height="120">`
     : "";
   const tagline = profile.tagline && !hidden.has("tagline",)
-    ? `<p>${escapeHtml(profile.tagline,)}</p>`
+    ? `<p class="medium-text">${escapeHtml(profile.tagline,)}</p>`
     : "";
   const links = config.blocks.filter((block,) => block.type === "link");
   const list = links.length === 0
     ? ""
-    : `<nav><ul>${links.map((block,) =>
-      `<li><a href="${escapeHtml(block.link.url,)}">${escapeHtml(block.link.title,)
-      }</a></li>`
-    ).join("",)
+    : `<nav><ul class="grid">${links.map((block,) => {
+      // Mirror the live grid span: a `row` is full-width, `button`/`card`
+      // pair into two columns, so crawlers and the JS-disabled paint match
+      // the app.
+      const span = block.format === "row" ? "s12" : "s12 m6";
+      return `<li class="${span}"><a class="button" href="${escapeHtml(block.link.url,)
+        }">${escapeHtml(block.link.title,)}</a></li>`;
+    }).join("",)
     }</ul></nav>`;
   return [
     `<main class="linklist">`,
-    `${avatar}<h1>${escapeHtml(profile.name,)}</h1>${tagline}`,
+    `<header class="profile">${avatar}<h1>${escapeHtml(profile.name,)
+    }</h1>${tagline}</header>`,
     `${list}`,
-    `<p>Enable JavaScript to load the full styled page.</p>`,
-    `<footer class="footer">${escapeHtml(brandText(version,),)}</footer>`,
+    `<p class="small-text">Enable JavaScript to load the full styled page.</p>`,
+    `<footer class="footer small-text"><div>${escapeHtml(brandText(version,),)
+    }</div></footer>`,
     `</main>`,
   ].join("",);
 }
@@ -102,9 +109,16 @@ export function renderIndexHtml(
   const lang = escapeHtml(config.profile.lang ?? "en",);
   const head = buildHead(config, opts,);
   const bodyClass = escapeHtml(themeBodyClass(config.theme,),);
-  // The preset CSS is a real static file next to the page (buildit copies
-  // `themes/`), so link it directly: the <noscript> fallback and the first
-  // paint are styled before entry.ts inlines the runtime token overrides.
+  const mode = config.theme?.mode ?? "auto";
+  // `auto` is not a BeerCSS class: a tiny blocking script right after `<body>`
+  // flips `body.dark` from the OS preference before the first paint (no flash),
+  // then entry.ts keeps it in sync live. `dark`/`light` come baked in `bodyClass`.
+  const autoScript = mode === "auto"
+    ? `<script>if(matchMedia("(prefers-color-scheme:dark)").matches)document.body.classList.add("dark")</script>`
+    : "";
+  // The shared layout and the brand "skin" are real static files next to the
+  // page (buildit copies `themes/`), so link them: the `<noscript>` fallback and
+  // the first paint are styled before entry.ts layers the runtime overrides.
   const presetLink = config.theme.preset
     ? `<link rel="stylesheet" href="./${escapeHtml(config.theme.preset,)}.css">`
     : "";
@@ -117,11 +131,13 @@ export function renderIndexHtml(
     <link rel="manifest" href="./manifest.json">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="${BEER_CSS}">
-    <link rel="stylesheet" href="${MATERIAL_ICONS}">
+    <link rel="stylesheet" href="./linklist-base.css">
     ${presetLink}
+    <link rel="stylesheet" href="${MATERIAL_ICONS}">
     <script type="module" src="${BEER_JS}"></script>
   </head>
   <body class="${bodyClass}">
+    ${autoScript}
     <div id="app">
       <noscript>${noScriptFallback(config, opts.version ?? "",)}</noscript>
     </div>
@@ -162,14 +178,13 @@ export function renderManifest(config: LinklistConfig,): string {
     start_url: "./",
     scope: "./",
     display: "standalone",
-    // Only declare a background when the config sets one: guessing "#ffffff"
-    // would flash a white PWA splash behind a dark preset.
+    // `theme_color` is the brand primary (falls back to a Material default);
+    // the page background is owned by BeerCSS per light/dark mode, so no
+    // `background_color` is guessed here (a wrong value would flash a mismatched
+    // PWA splash behind the preset).
     theme_color: themeColorValue,
     icons,
   };
-  if (theme.custom?.background_color) {
-    manifest.background_color = theme.custom.background_color;
-  }
   return `${JSON.stringify(manifest, undefined, 2,)}\n`;
 }
 

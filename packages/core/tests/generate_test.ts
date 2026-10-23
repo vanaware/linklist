@@ -32,7 +32,7 @@ const config: LinklistConfig = {
     },
     { type: "section", title: "About", body: "**secret prose**", },
   ],
-  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
+  theme: { preset: "violet", custom: { primary_color: "#2200aa", }, },
 };
 
 describe("renderIndexHtml", () => {
@@ -46,15 +46,31 @@ describe("renderIndexHtml", () => {
     assertStringIncludes(html, 'property="og:type" content="profile"',);
     assertStringIncludes(html, 'rel="canonical" href="https://jane.dev/"',);
   });
-  it("links the manifest, BeerCSS and the app bundle", () => {
+  it("links the manifest, BeerCSS, the base layout, the skin and the bundle", () => {
     assertStringIncludes(html, 'rel="manifest" href="./manifest.json"',);
     assertStringIncludes(html, "beercss@3.7.12",);
+    assertStringIncludes(html, 'href="./linklist-base.css"',);
+    assertStringIncludes(html, 'href="./violet.css"',);
     assertStringIncludes(html, '<script type="module" src="./linklist.js">',);
   });
-  it("renders a no-JS fallback with every link", () => {
+  it("resolves `auto` with a no-flash inline script (empty body class)", () => {
+    // No `mode` set → auto: static body class is empty and the head flips
+    // `body.dark` from the OS preference before first paint.
+    assertStringIncludes(html, '<body class="">',);
+    assertStringIncludes(html, "prefers-color-scheme:dark",);
+    // An explicit dark mode bakes the class and skips the auto script.
+    const dark = renderIndexHtml(
+      { ...config, theme: { ...config.theme, mode: "dark", }, },
+    );
+    assertStringIncludes(dark, '<body class="dark">',);
+    assertEquals(dark.includes("prefers-color-scheme:dark",), false,);
+  });
+  it("renders a no-JS fallback with every link, in BeerCSS markup", () => {
     assertStringIncludes(html, "<noscript>",);
     assertStringIncludes(html, "https://github.com/jane",);
     assertStringIncludes(html, "https://jane.dev",);
+    assertStringIncludes(html, '<a class="button"',);
+    assertStringIncludes(html, '<ul class="grid">',);
   });
   it("bakes the Made with linklist brand into the no-JS fallback", () => {
     assertStringIncludes(html, "Made with linklist",);

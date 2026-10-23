@@ -1,10 +1,13 @@
 /**
  * @file LinkList.ts
- * @description Renders a run of consecutive link blocks as one accessible list.
- * Each item is a semantic anchor with an optional image thumbnail or brand icon,
- * title and Markdown subtitle, plus correct `target`/`rel` handling for
- * `new_tab`/`nofollow`. The block's predefined `format` (row / button / card)
- * selects the presentation via an `is-` variant class.
+ * @description Renders a run of consecutive link blocks as one accessible list
+ * using pure BeerCSS markup: a `<ul class="grid">` of `<li>` cells, each holding
+ * an `<a class="button">`. The block's `format` drives both the button size and
+ * the grid span: `row` is a full-width line (`s12`), while `button`/`card` sit in
+ * a two-column grid (`s12 m6` — one column on phones, two on wider screens, with
+ * `card` additionally using `.button.large`). Each item is a semantic anchor with
+ * an optional round thumbnail or brand icon, a title and a Markdown subtitle,
+ * plus correct `target`/`rel` handling for `new_tab`/`nofollow`.
  */
 import { html, } from "htm/preact";
 import type { LinkBlock, LinkItem, } from "../lib/types.ts";
@@ -20,14 +23,20 @@ function relFor(link: LinkItem,): string | undefined {
 }
 
 /**
- * Map a block's predefined format to its styling class. `is-` prefixed to
- * avoid colliding with BeerCSS's own `.button` component styles; `row` is the
- * bare default (no extra class).
+ * Map a block's predefined format to BeerCSS button classes. `row` and `button`
+ * both render the standard `.button`; `card` is the larger `.button.large`.
  */
-function formatClass(format: LinkBlock["format"],): string {
-  if (format === "button") return "is-button";
-  if (format === "card") return "is-card";
-  return "";
+function buttonClass(format: LinkBlock["format"],): string {
+  return format === "card" ? "button large" : "button";
+}
+
+/**
+ * Map a format to its grid-cell span. A `row` is a full-width line (`s12`);
+ * `button` and `card` are half-width cells that pair into two columns on wider
+ * screens (`s12 m6`). Presentation (spacing, sizing) still lives in BeerCSS.
+ */
+function spanClass(format: LinkBlock["format"],): string {
+  return format === "row" ? "s12" : "s12 m6";
 }
 
 export interface LinkRowProps {
@@ -36,43 +45,37 @@ export interface LinkRowProps {
 }
 
 export function LinkRow({ link, format, }: LinkRowProps,) {
-  const cls = ["link", formatClass(format,),].filter(Boolean,).join(" ",);
-
   return html`
-    <li class=${cls}>
+    <li class=${spanClass(format,)}>
       <a
+        class=${buttonClass(format,)}
         href=${link.url}
         target=${link.new_tab ? "_blank" : undefined}
         rel=${relFor(link,)}
       >
         ${link.image
-          ? html`
-            <span class="link-icon">
-              <img
-                class="thumb"
-                src=${link.image}
-                alt=${link.image_alt ?? ""}
-                width="48"
-                height="48"
-              />
-            </span>
+      ? html`
+            <img
+              class="circle"
+              src=${link.image}
+              alt=${link.image_alt ?? ""}
+              width="48"
+              height="48"
+            />
           `
-          : link.icon
-          ? html`<span class="link-icon"><${BrandIcon} name=${link.icon} /></span>`
-          : null}
-        <span class="link-body">
-          <span class="link-title">${link.title}</span>
+      : link.icon
+        ? html`<${BrandIcon} name=${link.icon} />`
+        : null}
+        <span>
+          <span>${link.title}</span>
           ${link.subtitle
-            ? html`
-              <span class="link-subtitle">
+      ? html`
+              <span class="small-text">
                 <${MarkdownText} text=${link.subtitle} inline=${true} />
               </span>
             `
-            : null}
+      : null}
         </span>
-        ${link.new_tab
-          ? html`<i class="icon chevron" aria-hidden="true">open_in_new</i>`
-          : null}
       </a>
     </li>
   `;
@@ -85,17 +88,17 @@ export interface LinkListProps {
 
 export function LinkList({ blocks, }: LinkListProps,) {
   return html`
-    <nav class="links-nav" aria-label="Links">
-      <ul class="links">
+    <nav aria-label="Links">
+      <ul class="grid">
         ${blocks.map((block, i,) =>
-          html`
+    html`
             <${LinkRow}
               link=${block.link}
               format=${block.format}
               key=${i}
             />
           `
-        )}
+  )}
       </ul>
     </nav>
   `;

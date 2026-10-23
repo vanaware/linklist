@@ -69,29 +69,26 @@ export interface LinkItem {
   nofollow?: boolean;
 }
 
-/** Theme token overrides — customize without editing CSS. */
+/**
+ * Brand customization merged on top of the preset. Under pure BeerCSS these map
+ * directly onto BeerCSS design tokens (see `lib/theme.ts` `tokensToCss`): the
+ * surface/background/text colors and elevation are owned by BeerCSS per light/
+ * dark mode, so only the brand color and font are author-tunable here.
+ */
 export interface ThemeTokens {
-  /** Brand color as a plain hex value (`#rgb` / `#rrggbb` …). */
+  /** Brand color as a plain hex value (`#rgb` / `#rrggbb` …) → `--primary`. */
   primary_color?: string;
-  /** Page background as a plain hex value (`#rgb` / `#rrggbb` …). */
-  background_color?: string;
-  /** Body text color as a plain hex value (`#rgb` / `#rrggbb` …). */
-  text_color?: string;
-  /** CSS font stack. Defaults to the system stack (no webfont fetch). */
+  /** CSS font stack → `--font`. Defaults to the BeerCSS system stack. */
   font_family?: string;
-  /** Border radius, e.g. "12px". */
-  radius?: string;
-  /** Elevation preset. */
-  shadow?: "none" | "small" | "medium" | "large";
 }
 
 /** Appearance configuration. */
 export interface ThemeConfig {
-  /** Name of a bundled theme preset, e.g. "minimal-dark". Required. */
+  /** Name of a bundled brand "skin" preset, e.g. "violet". Required. */
   preset: string;
-  /** Color scheme behavior. Defaults to "auto" (follows system). */
+  /** Color scheme behavior. Defaults to "auto" (follows the OS). */
   mode?: "light" | "dark" | "auto";
-  /** Optional token overrides merged on top of the preset. */
+  /** Optional brand tokens merged on top of the preset (see {@linkcode ThemeTokens}). */
   custom?: ThemeTokens;
 }
 
@@ -119,15 +116,16 @@ export interface ContentSection {
 /**
  * The predefined block presentations an author picks from with `block.format`.
  * Each format implies the content fields it needs (link → url/title, text →
- * body, figure → image); the validator maps it to the matching render shape
- * below.
+ * body, figure → image, island → the island `name`); the validator maps it to
+ * the matching render shape below.
  */
 export type BlockFormat =
   | "row"
   | "button"
   | "card"
   | "text"
-  | "figure";
+  | "figure"
+  | "island";
 
 /** Ordered-flow block: a single link, presented per its `format`. */
 export interface LinkBlock {
@@ -149,7 +147,9 @@ export interface SectionBlock {
   body?: string;
 }
 
-/** Ordered-flow block: a standalone image/figure with an optional caption. */
+/**
+ * Ordered-flow block: a standalone image/figure with an optional caption.
+ */
 export interface ImageBlock {
   /** Block discriminant (assigned by the validator's block classifier). */
   type: "image";
@@ -161,8 +161,24 @@ export interface ImageBlock {
   caption?: string;
 }
 
+/**
+ * Ordered-flow block: an interactive island — a small Preact component shipped
+ * as a plain `.js` module in `public/islands/`, loaded on demand at runtime and
+ * hydrated in place (mdBlog-style). The bundle exposes its Preact/Signals
+ * runtime on `globalThis.linklistRuntime`, so the island shares the app's single
+ * Preact instance. Until (or if) it loads, a static placeholder is shown.
+ */
+export interface IslandBlock {
+  /** Block discriminant (assigned by the validator's block classifier). */
+  type: "island";
+  /** Island file name (safe identifier): loaded from `./islands/<name>.js`. */
+  name: string;
+  /** Props passed straight to the island component on hydration. */
+  params?: Record<string, unknown>;
+}
+
 /** One item of the page's ordered content (`config.blocks`). */
-export type Block = LinkBlock | SectionBlock | ImageBlock;
+export type Block = LinkBlock | SectionBlock | ImageBlock | IslandBlock;
 
 /** Top-level configuration object for a linklist site (shape v2). */
 export interface LinklistConfig {
@@ -170,7 +186,7 @@ export interface LinklistConfig {
   version?: string;
   /** Identity + head metadata: name, tagline, bio, avatar, url, twitter, … */
   profile: Profile;
-  /** The page's content in final display order (link / section / image). */
+  /** The page's content in final display order (link / section / image / island). */
   blocks: Block[];
   /** Preset + mode + token overrides for the page appearance. */
   theme: ThemeConfig;

@@ -40,6 +40,7 @@ const config: LinklistConfig = {
       image_alt: "A figure",
       caption: "See the *guide*",
     },
+    { type: "island", name: "Counter", params: { start: 3, step: 2, }, },
     {
       type: "link",
       format: "card",
@@ -51,7 +52,7 @@ const config: LinklistConfig = {
       },
     },
   ],
-  theme: { preset: "minimal-dark", mode: "dark", },
+  theme: { preset: "violet", mode: "dark", },
   footer: { show_last_updated: true, updated: "2026-01-02", },
 };
 
@@ -67,11 +68,11 @@ describe("App", () => {
     assertStringIncludes(html, 'alt="Jane"',);
   });
 
-  it("renders link rel/target semantics", () => {
+  it("renders link rel/target semantics as pure BeerCSS buttons", () => {
     assertStringIncludes(html, 'target="_blank"',);
     assertStringIncludes(html, 'rel="noopener noreferrer"',);
     assertStringIncludes(html, 'rel="nofollow"',);
-    assertStringIncludes(html, '<a href="https://jane.dev"',);
+    assertStringIncludes(html, '<a class="button" href="https://jane.dev"',);
   });
 
   it("renders inline Markdown in a link subtitle", () => {
@@ -94,8 +95,8 @@ describe("App", () => {
   });
 
   it("renders the last-updated note and brand on separate lines", () => {
-    assertStringIncludes(html, '<div class="footer-note">',);
-    assertStringIncludes(html, '<div class="footer-brand">Made with linklist',);
+    assertStringIncludes(html, "Last updated 2026-01-02",);
+    assertStringIncludes(html, "Made with linklist",);
     // They must not run together on one line (the original bug).
     assertEquals(html.includes("2026-01-02Made with linklist",), false,);
   });
@@ -120,8 +121,8 @@ describe("App", () => {
     assertEquals([...at,].sort((a, b,) => a - b), at,); // strictly ordered
   });
 
-  it("turns link.image into a thumbnail with its alt text", () => {
-    assertStringIncludes(html, 'class="thumb"',);
+  it("turns link.image into a round thumbnail with its alt text", () => {
+    assertStringIncludes(html, 'class="circle"',);
     assertStringIncludes(html, 'src="./assets/cover.svg"',);
     assertStringIncludes(html, 'alt="Podcast cover art"',);
   });
@@ -130,7 +131,16 @@ describe("App", () => {
     assertStringIncludes(html, '<figure class="block-image">',);
     assertStringIncludes(html, 'src="./assets/figure.svg"',);
     assertStringIncludes(html, 'alt="A figure"',);
-    assertStringIncludes(html, "<figcaption>",);
+    assertStringIncludes(html, "<figcaption",);
+  });
+
+  it("renders an island block as a hydration placeholder (name + props)", () => {
+    assertStringIncludes(html, 'class="block-island"',);
+    assertStringIncludes(html, 'data-island="Counter"',);
+    assertStringIncludes(html, "data-props=",);
+    assertStringIncludes(html, "Loading Counter",);
+    // Island props ride along as JSON for the runtime to hand the component.
+    assertStringIncludes(html, "start",);
   });
 
   it("skips profile fields listed in profile.hide", () => {

@@ -50,12 +50,24 @@
         "caption": { "type": "string" }
       }
     },
+    "IslandBlock": {
+      "description": "An interactive island hydrated from ./islands/<island>.js at runtime (`format: \"island\"`).",
+      "type": "object",
+      "required": ["format", "island"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": "island" },
+        "island": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$" },
+        "params": { "type": "object" }
+      }
+    },
     "Block": {
       "description": "A pure block: it names one predefined `format` and carries that format's fields.",
       "oneOf": [
         { "$ref": "#/definitions/LinkBlock" },
         { "$ref": "#/definitions/TextBlock" },
-        { "$ref": "#/definitions/FigureBlock" }
+        { "$ref": "#/definitions/FigureBlock" },
+        { "$ref": "#/definitions/IslandBlock" }
       ]
     }
   },
@@ -115,17 +127,7 @@
               "type": "string",
               "pattern": "^#([0-9a-fA-F]{3,8})$"
             },
-            "background_color": {
-              "type": "string",
-              "pattern": "^#([0-9a-fA-F]{3,8})$"
-            },
-            "text_color": {
-              "type": "string",
-              "pattern": "^#([0-9a-fA-F]{3,8})$"
-            },
-            "font_family": { "type": "string", "pattern": "^[^<>{};\"]*$" },
-            "radius": { "type": "string", "pattern": "^[^<>{};\"]*$" },
-            "shadow": { "enum": ["none", "small", "medium", "large"] }
+            "font_family": { "type": "string", "pattern": "^[^<>{};\"]*$" }
           }
         }
       }

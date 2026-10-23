@@ -1,0 +1,190 @@
+/*
+ * linklist base layout — shared by every brand "skin" preset.
+ *
+ * BeerCSS (loaded first in the head) owns ALL color, typography and component
+ * styling, including the light/dark palettes that flip on `body.dark`. This file
+ * only adds what BeerCSS utilities cannot express for a link-in-bio page:
+ * centering and capping the column, neutralizing BeerCSS's landmark chrome,
+ * making the link buttons full-width, and a little vertical rhythm.
+ *
+ * It deliberately carries NO color tokens, so it works unchanged in light and
+ * dark mode. Brand color lives entirely in the skin preset (violet.css, …).
+ */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+/* The Preact mount sits between the flexed `body` and our column; without this
+   it shrink-wraps to max-content and caps the page below its intended width. */
+#app {
+  width: 100%;
+}
+
+.linklist {
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  padding: 2rem 1.25rem 2.75rem;
+}
+
+/* Neutralize BeerCSS's built-in chrome on semantic landmarks (it paints
+   `header`/`footer`/`nav`/`section` with a surface background, flex sizing and
+   `white-space: nowrap`). */
+.linklist header,
+.linklist footer,
+.linklist nav,
+.linklist section {
+  background: transparent;
+  display: block;
+  min-block-size: 0;
+  padding: 0;
+  margin: 0;
+  white-space: normal;
+}
+
+/* Profile header is a centered bio block; BeerCSS has no avatar utility, so the
+   round shape comes from `.circle` and centering from `text-align`. */
+.linklist .profile {
+  text-align: center;
+  padding-bottom: 0.5rem;
+}
+
+.linklist .profile img {
+  /* BeerCSS `.circle` fixes size to 3rem (48px), which would otherwise win over
+     the width/height attributes; override so the avatar reads at a real profile
+     scale while `.circle` still supplies the round shape. */
+  width: 7.5rem;
+  height: 7.5rem;
+  margin: 0 auto 0.85rem;
+}
+
+/* Compact, cohesive type scale. BeerCSS headings are page-level (h1-h3 are
+   "Display", far too large for a single-column bio), so retune the few sizes we
+   actually use here. Sizes/spacing/weight only — no colors, which stay owned by
+   BeerCSS per light/dark mode. */
+.linklist .profile h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.linklist .profile .medium-text {
+  margin: 0.3rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.linklist .profile .bio {
+  margin: 0.85rem auto 0;
+  max-width: 30rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.linklist .profile .small-text {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+}
+
+/* The link list uses BeerCSS `.grid` with `.s12 .m6` items: one column on
+   phones, two on wider screens. Strip the default list chrome. */
+.linklist ul.grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  /* BeerCSS `.grid` derives BOTH its `gap` AND the 12-column track `calc()` from
+     the `---gap` custom property. Overriding `gap` alone desyncs them: tracks
+     stay sized for the default 1rem while the applied gap shrinks, leaving each
+     button ~44px narrower than a full-width sibling (islands/image). Set `---gap`
+     so gap and tracks stay consistent — the buttons then align flush. */
+  ---gap: 0.75rem;
+}
+
+/* BeerCSS `.button` is inline and centers its content; a link-in-bio wants
+   full-width, left-aligned actions whose label may wrap on narrow screens.
+   Scoped to `.linklist .button` so island `.circle` icon buttons keep their
+   natural size. */
+.linklist .button {
+  box-sizing: border-box;
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  text-align: left;
+  white-space: normal;
+}
+
+.linklist .button > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.linklist .button i,
+.linklist .button img {
+  flex: 0 0 auto;
+}
+
+/* Vertical rhythm for the standalone blocks. */
+.linklist nav {
+  margin: 1rem 0;
+}
+
+/* Block headings (the About section title and island titles, authored as h5):
+   a single quiet, consistent sub-heading size rather than BeerCSS's page-level
+   default. */
+.linklist section h5,
+.linklist .block-island h5 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.linklist section {
+  margin: 1rem 0;
+}
+
+.linklist .block-image {
+  margin: 1rem 0;
+}
+
+.linklist .block-image img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.linklist .block-island {
+  margin: 1rem 0;
+}
+
+.linklist .footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+/* Responsive: tighten gutters on phones, breathe on wide screens. */
+@media (max-width: 24rem) {
+  .linklist {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .linklist {
+    max-width: 44rem;
+    padding: 3.5rem 2rem 4rem;
+  }
+}

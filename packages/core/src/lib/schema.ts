@@ -7,7 +7,7 @@
  *
  * The authored `config.json` uses **pure blocks**: every `config.blocks` entry
  * is a single self-contained item that names a predefined `format` (`row` /
- * `button` / `card` / `text` / `figure`). This module validates each
+ * `button` / `card` / `text` / `figure` / `island`). This module validates each
  * block's fields against its `format` and returns a fully discriminated
  * {@linkcode LinklistConfig} whose `blocks` carry a `type` tag. Everything
  * downstream (`App`, `generate.ts`) therefore switches on
@@ -69,11 +69,7 @@ const profileType = type({
 
 const themeTokensType = type({
   "primary_color?": "string",
-  "background_color?": "string",
-  "text_color?": "string",
   "font_family?": "string",
-  "radius?": "string",
-  "shadow?": "'none' | 'small' | 'medium' | 'large'",
 },);
 
 const themeType = type({
@@ -93,7 +89,7 @@ const footerType = type({
 // report precise, per-format cross-field errors. Kept "inexact" so an
 // editor-only stray key does not fail parsing.
 const rawBlockType = type({
-  format: "'row' | 'button' | 'card' | 'text' | 'figure'",
+  format: "'row' | 'button' | 'card' | 'text' | 'figure' | 'island'",
   "title?": "string",
   "url?": "string",
   "icon?": "string",
@@ -105,6 +101,8 @@ const rawBlockType = type({
   "markdown?": "string",
   "new_tab?": "boolean",
   "nofollow?": "boolean",
+  "island?": "string",
+  "params?": "object",
 },);
 
 /** An authored block, before classification into a {@linkcode Block}. */
@@ -121,6 +119,8 @@ interface RawBlock {
   markdown?: string;
   new_tab?: boolean;
   nofollow?: boolean;
+  island?: string;
+  params?: Record<string, unknown>;
 }
 
 /** Structural shape of the authored config; `blocks` are still {@linkcode RawBlock}s. */
@@ -158,7 +158,13 @@ function isHttpUrl(value: string,): boolean {
 const HEX_COLOR = /^#([0-9a-fA-F]{3,8})$/;
 
 /** CSS-ish token values must never carry structural markup/terminator chars. */
-const CSS_UNSAFE = /[<>{};"]/;
+const CSS_UNSAFE = /[<>{};\u0022]/;
+
+/**
+ * A safe island file name: a bare identifier that becomes the `./islands/<name>.js`
+ * module path. Rejects slashes, `.`/`..` and any other path-traversal characters.
+ */
+const ISLAND_NAME = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 /** A calendar `YYYY-MM-DD` date (the footer's content last-updated stamp). */
 function isIsoDate(value: string,): boolean {
@@ -248,6 +254,20 @@ function classifyBlock(
         caption: block.caption,
       };
     }
+    case "island": {
+      const name = block.island;
+      if (!name) {
+        errors.push(`${at}: an "island" block needs an "island" (file name)`,);
+        return null;
+      }
+      if (!ISLAND_NAME.test(name,)) {
+        errors.push(
+          `${at}.island: "${name}" is not a safe island name (letters, digits, "_", "-"; must start with a letter)`,
+        );
+        return null;
+      }
+      return { type: "island", name, params: block.params, };
+    }
     default:
       return null;
   }
@@ -286,9 +306,7 @@ function semanticErrors(
   }
 
   const tokens = theme.custom;
-  for (
-    const key of ["primary_color", "background_color", "text_color",] as const
-  ) {
+  for (const key of ["primary_color",] as const) {
     const value = tokens?.[key];
     if (value && !HEX_COLOR.test(value,)) {
       errors.push(
@@ -296,7 +314,7 @@ function semanticErrors(
       );
     }
   }
-  for (const key of ["font_family", "radius",] as const) {
+  for (const key of ["font_family",] as const) {
     const value = tokens?.[key];
     if (value && CSS_UNSAFE.test(value,)) {
       errors.push(
@@ -325,7 +343,7 @@ function semanticErrors(
  *   blocks: [
  *     { format: "row", title: "Site", url: "https://jane.dev" },
  *   ],
- *   theme: { preset: "minimal-dark" },
+ *   theme: { preset: "violet" },
  * });
  * if (result.ok) console.log(result.data.blocks[0]?.type); // "link"
  * else console.error(result.errors);

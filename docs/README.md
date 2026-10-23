@@ -4,26 +4,30 @@
 link-in-bio page that you can host on GitHub Pages or any static host. The build bakes
 the per-profile SEO `<head>`, `manifest.json` and `robots.txt` into real files (so
 crawlers and link previews work without JS), then `linklist.js` fetches `./config.json`
-at runtime, validates it, resolves the theme and renders the
-Preact app into the body.
+at runtime, validates it, resolves the theme, renders the
+Preact app into the body and hydrates any `island` blocks in place.
 
 ## Reading order
 
 1. **[Guide](guide.md)** — install, configure, preview, build and ship your first page.
 2. **[Configuration reference](configuration.md)** — every field of `config.json`, with
    validation rules and examples.
-3. **[Theming](theming.md)** — presets and token overrides.
-4. **[Deploy](deploy.md)** — GitHub Pages, other static hosts and custom domains.
-5. **[API reference](api-reference.md)** — the public surface of
+3. **[Theming](theming.md)** — brand skins, `theme.custom` token overrides and native
+   dark/light/auto.
+4. **[Islands](islands.md)** — interactive components hydrated from `public/islands/`.
+5. **[Deploy](deploy.md)** — GitHub Pages, other static hosts and custom domains.
+6. **[API reference](api-reference.md)** — the public surface of
    `@vanaware/linklist` (for embedding the engine in your own tooling or the future
    SaaS tier).
-6. **[Site templates](templates/README.md)** — starter `config.json` files (e.g.
+7. **[Site templates](templates/README.md)** — starter `config.json` files (e.g.
    `minimal.config.json`) ready to copy and edit.
 
 ## Key facts
 
 - **Runtime**: Deno 2.x (pure — no Node runtime, no `node_modules` workflow).
-- **UI**: Preact + `@preact/signals`, styled with BeerCSS (Material Design 3) via CDN.
+- **UI**: Preact + `@preact/signals`, styled with **pure BeerCSS** (Material Design 3)
+  via CDN. The page markup uses BeerCSS tags/classes directly; `beercss.md` in this
+  folder is the BeerCSS API reference (available classes and design tokens).
 - **Config**: one `config.json` (JSON, not YAML), validated with ArkType.
 - **Render model**: pure client render — nothing is pre-rendered and the config is never
   embedded. No-JS visitors get the `<noscript>` notice.

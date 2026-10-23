@@ -86,10 +86,28 @@ dropped, so the output stays XSS-safe.
 Every block is a **pure, self-contained item** that names one predefined `format`. The
 `format` decides both how it renders and which fields it needs: `row`/`button`/`card` are
 link formats (need `title` + `url`), `text` is a Markdown section, `figure` a standalone
-image. The order of `blocks` is the order on screen — links,
-sections and figures interleave freely (consecutive link blocks group into one list).
+image and `island` an interactive component. The order of `blocks` is the order on screen —
+links, sections, figures and islands interleave freely (consecutive link blocks group into
+one list).
 
-## 7. Build for production
+## 7. Add an interactive island
+
+To drop real interactivity (a counter, a form, a widget) into the static page, add an
+`island` block that names a plain-JS component in `public/islands/` and passes it props:
+
+```jsonc
+{
+  "blocks": [
+    /* … */, { "format": "island", "island": "Counter", "params": { "start": 3, "step": 2 } }
+  ]
+}
+```
+
+The block shows a static placeholder first, then hydrates the component in place using the
+app's single shared Preact/Signals runtime — no second copy, no build step, and the page
+never breaks if the island fails to load. See [Islands](islands.md) for authoring your own.
+
+## 8. Build for production
 
 ```bash
 deno task esbuild     # esbuild engine    → packages/server/build/dist
@@ -103,7 +121,7 @@ Both first run `deno task linklist:build`, which generates `index.html`,
 The output in `packages/server/build/dist` is fully self-contained and uses relative
 paths, so it works at a domain root **or** under a project-page subfolder.
 
-## 8. Deploy
+## 9. Deploy
 
 - **GitHub Pages**: push a `v*.*` tag (or run the *Deploy Example to GitHub Pages*
   workflow) — see [Deploy](deploy.md).
@@ -115,5 +133,6 @@ paths, so it works at a domain root **or** under a project-page subfolder.
 
 - [Configuration reference](configuration.md)
 - [Theming](theming.md)
+- [Islands](islands.md)
 - [Deploy](deploy.md)
 - [API reference](api-reference.md)

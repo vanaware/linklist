@@ -16,7 +16,7 @@ function baseConfig() {
     blocks: [
       { format: "row", title: "Site", url: "https://jane.dev", },
     ],
-    theme: { preset: "minimal-dark", },
+    theme: { preset: "violet", },
   };
 }
 
@@ -205,6 +205,89 @@ describe("validateConfig — block classification by format", () => {
     );
     assertStringIncludes(noAlt, "image_alt",);
   });
+
+  it("classifies an `island` block (name + params)", () => {
+    const result = validateConfig(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        {
+          format: "island",
+          island: "Counter",
+          params: { start: 3, step: 2, },
+        },
+      ],),
+    );
+    assert(result.ok, JSON.stringify(result,),);
+    if (result.ok) {
+      const block = result.data.blocks[1];
+      assertEquals(block?.type, "island",);
+      if (block?.type === "island") {
+        assertEquals(block.name, "Counter",);
+        assertEquals(block.params, { start: 3, step: 2, },);
+      }
+    }
+  });
+
+  it("classifies an `island` block with no params", () => {
+    const result = validateConfig(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        { format: "island", island: "DemoWidget", },
+      ],),
+    );
+    assert(result.ok, JSON.stringify(result,),);
+    if (result.ok) {
+      const block = result.data.blocks[1];
+      assertEquals(block?.type, "island",);
+      if (block?.type === "island") assertEquals(block.params, undefined,);
+    }
+  });
+
+  it("classifies two same-name `island` blocks with independent params", () => {
+    // The same island file may be used more than once; each block must keep its
+    // own params so the hydrated components hold separate state.
+    const result = validateConfig(
+      withBlocks([
+        { format: "row", title: "A", url: "https://a.test", },
+        {
+          format: "island",
+          island: "Counter",
+          params: { start: 3, step: 2, },
+        },
+        {
+          format: "island",
+          island: "Counter",
+          params: { start: 100, step: 10, },
+        },
+      ],),
+    );
+    assert(result.ok, JSON.stringify(result,),);
+    if (result.ok) {
+      const [a, b,] = [result.data.blocks[1], result.data.blocks[2],];
+      assertEquals(a?.type, "island",);
+      assertEquals(b?.type, "island",);
+      if (a?.type === "island" && b?.type === "island") {
+        assertEquals(a.name, "Counter",);
+        assertEquals(b.name, "Counter",);
+        assertEquals(a.params, { start: 3, step: 2, },);
+        assertEquals(b.params, { start: 100, step: 10, },);
+      }
+    }
+  });
+
+  it("rejects an `island` block with no name", () => {
+    const joined = errorsOf(
+      withBlocks([{ format: "island", params: { a: 1, }, },],),
+    );
+    assertStringIncludes(joined, "island",);
+  });
+
+  it("rejects an unsafe `island` name (path traversal)", () => {
+    const joined = errorsOf(
+      withBlocks([{ format: "island", island: "../evil", },],),
+    );
+    assertStringIncludes(joined, "safe island name",);
+  });
 });
 
 describe("validateConfig — semantic cross-field rules", () => {
@@ -293,16 +376,15 @@ describe("validateConfig — semantic cross-field rules", () => {
     assert(good.ok, JSON.stringify(good,),);
   });
 
-  it("rejects markup-bearing font_family / radius values", () => {
+  it("rejects markup-bearing font_family values", () => {
     const joined = errorsOf({
       ...baseConfig(),
       theme: {
         preset: "x",
-        custom: { font_family: "ui</style><script>", radius: "1px; }", },
+        custom: { font_family: "ui</style><script>", },
       },
     },);
     assertStringIncludes(joined, "theme.custom.font_family",);
-    assertStringIncludes(joined, "theme.custom.radius",);
   });
 
   it("requires avatar_alt when avatar is set", () => {

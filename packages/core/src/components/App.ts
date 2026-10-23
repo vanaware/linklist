@@ -2,7 +2,7 @@
  * @file App.ts
  * @description Root component: composes the profile header and the page's
  * content from `config.blocks` — the ordered flow (link blocks, Markdown
- * sections and figures) where declaration order IS display
+ * sections, figures and interactive islands) where declaration order IS display
  * order. Consecutive link blocks render together as one list. Reads from the
  * `configSignal` store unless a `config` prop is passed (the latter keeps
  * server-side rendering and tests pure/deterministic).
@@ -14,6 +14,7 @@ import type { Block, LinkBlock, LinklistConfig, } from "../lib/types.ts";
 import { ContentSection, } from "./ContentSection.ts";
 import { Footer, } from "./Footer.ts";
 import { ImageBlock, } from "./ImageBlock.ts";
+import { IslandBlock, } from "./IslandBlock.ts";
 import { LinkList, } from "./LinkList.ts";
 import { ProfileHeader, } from "./ProfileHeader.ts";
 
@@ -25,8 +26,8 @@ export interface AppProps {
 
 /**
  * Render the ordered blocks, grouping each run of consecutive link blocks into
- * a single {@linkcode LinkList}. Section and image blocks break the run and
- * render inline.
+ * a single {@linkcode LinkList}. Section, image and island blocks break the run
+ * and render inline.
  */
 function renderBlocks(blocks: Block[],): VNode[] {
   const nodes: VNode[] = [];
@@ -48,6 +49,8 @@ function renderBlocks(blocks: Block[],): VNode[] {
       nodes.push(html`<${ContentSection} section=${block} key=${`b${i}`} />`,);
     } else if (block.type === "image") {
       nodes.push(html`<${ImageBlock} block=${block} key=${`b${i}`} />`,);
+    } else if (block.type === "island") {
+      nodes.push(html`<${IslandBlock} block=${block} key=${`b${i}`} />`,);
     }
   },);
   flush();
@@ -67,14 +70,8 @@ export function App(props: AppProps = {},): VNode {
     return html`<div class="empty">No configuration loaded.</div>`;
   }
 
-  const mode = config.theme?.mode ?? "auto";
-
   return html`
-    <main
-      class="linklist"
-      data-theme=${config.theme.preset}
-      data-mode=${mode}
-    >
+    <main class="linklist">
       <${ProfileHeader} profile=${config.profile} />
       ${renderBlocks(config.blocks,)}
       <${Footer}

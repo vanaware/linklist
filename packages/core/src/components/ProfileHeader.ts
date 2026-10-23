@@ -17,38 +17,36 @@ export function ProfileHeader({ profile, }: ProfileHeaderProps,) {
   return html`
     <header class="profile">
       ${profile.avatar && !hidden.has("avatar",)
-        ? html`
+      ? html`
           <img
-            class="avatar"
+            class="circle"
             src=${profile.avatar}
             alt=${profile.avatar_alt ?? ""}
-            width="96"
-            height="96"
+            width="120"
+            height="120"
           />
         `
-        : null}
-      <h1 class="name">${profile.name}</h1>
+      : null}
+      <h1>${profile.name}</h1>
       ${profile.tagline && !hidden.has("tagline",)
-        ? html`
-          <p class="tagline">
+      ? html`
+          <p class="medium-text">
             <${MarkdownText} text=${profile.tagline} inline=${true} />
           </p>
         `
-        : null}
+      : null}
       ${profile.bio && !hidden.has("bio",)
-        ? html`
+      ? html`
           <div class="bio">
             <${MarkdownText} text=${profile.bio} />
           </div>
         `
-        : null}
+      : null}
       ${profile.location && !hidden.has("location",)
-        ? html`
-          <p class="location">
-            <i class="icon" aria-hidden="true">place</i>${profile.location}
-          </p>
+      ? html`
+          <p class="small-text"><i aria-hidden="true">place</i> ${profile.location}</p>
         `
-        : null}
+      : null}
     </header>
   `;
 }

@@ -29,7 +29,7 @@ const config: LinklistConfig = {
       link: { title: "Site", url: "https://jane.dev", },
     },
   ],
-  theme: { preset: "minimal-dark", custom: { primary_color: "#2200aa", }, },
+  theme: { preset: "violet", custom: { primary_color: "#2200aa", }, },
 };
 
 describe("escapeHtml / safeJson", () => {

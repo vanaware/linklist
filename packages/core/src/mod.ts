@@ -27,6 +27,7 @@ export type {
   ContentSection,
   FooterConfig,
   ImageBlock,
+  IslandBlock,
   LinkBlock,
   LinkItem,
   LinklistConfig,
@@ -46,10 +47,7 @@ export type {
 
 // Static metadata builders (pure string helpers; no filesystem access).
 export {
-  presetVariable,
   readableInk,
-  readableLink,
-  resolveThemeCss,
   themeBodyClass,
   themeColor,
   tokensToCss,

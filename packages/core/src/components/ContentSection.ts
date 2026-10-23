@@ -13,10 +13,8 @@ export interface ContentSectionProps {
 
 export function ContentSection({ section, }: ContentSectionProps,) {
   return html`
-    <section class="section">
-      ${section.title
-        ? html`<h2 class="section-title">${section.title}</h2>`
-        : null}
+    <section>
+      ${section.title ? html`<h5>${section.title}</h5>` : null}
       ${section.body ? html`<${MarkdownText} text=${section.body} />` : null}
     </section>
   `;

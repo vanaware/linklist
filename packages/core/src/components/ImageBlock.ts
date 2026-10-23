@@ -14,8 +14,10 @@ export interface ImageBlockProps {
 export function ImageBlock({ block, }: ImageBlockProps,) {
   return html`
     <figure class="block-image">
-      <img src=${block.image} alt=${block.image_alt} loading="lazy" />
-      ${block.caption ? html`<figcaption>${block.caption}</figcaption>` : null}
+      <img class="round" src=${block.image} alt=${block.image_alt} loading="lazy" />
+      ${block.caption
+      ? html`<figcaption class="small-text">${block.caption}</figcaption>`
+      : null}
     </figure>
   `;
 }

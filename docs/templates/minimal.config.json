@@ -16,7 +16,7 @@
     }
   ],
   "theme": {
-    "preset": "minimal-dark",
+    "preset": "violet",
     "mode": "auto"
   }
 }

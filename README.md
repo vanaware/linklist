@@ -13,7 +13,8 @@
 ## 🌟 Highlights
 
 - **One file, whole page**: everything — profile (identity + head metadata), the ordered
-  `blocks` flow (links as rows/buttons/cards, Markdown sections and figures),
+  `blocks` flow (links as rows/buttons/cards, Markdown sections, figures and interactive
+  islands),
   theme, footer — lives in a versioned `config.json`, validated with
   [ArkType](https://arktype.io).
 - **Static head + client-rendered body**: the build bakes the per-profile SEO `<head>`
@@ -25,11 +26,17 @@
   declarative via [`@vanaware/buildit`](https://jsr.io/@vanaware/buildit)
   (`scripts/esbuild.jsonc` / `scripts/denobuild.jsonc`); a small Cliffy CLI in core
   (`packages/core/src/cli.ts`) generates the site files and validates configs.
-- **BeerCSS themes**: presets (`minimal-dark`, `light-simple`) selectable via
-  `config.theme.preset`, with token overrides (colors, radius, shadow, font).
+- **Pure BeerCSS + native theming**: the whole page is BeerCSS markup. Brand **skins**
+  (`violet`, `indigo`) selectable via `config.theme.preset` override only BeerCSS color
+  tokens; dark/light come from BeerCSS's `body.dark`/`body.light` (`mode: auto` resolves
+  without a flash).
 - **Rich text where you want it**: Markdown (CommonMark + GFM) in the bio, tagline,
   section bodies, link subtitles and footer — rendered to real Preact VNodes, no
   `dangerouslySetInnerHTML`.
+- **Interactive islands**: an `island` block hydrates a plain-JS Preact component from
+  `public/islands/` in place, reusing the app's single shared Preact/Signals instance —
+  no build step, no second copy, and the page still works (static placeholder) if an
+  island never loads.
 - **Private by default**: no analytics or click tracking — there is none to opt into.
 
 ---
@@ -102,23 +109,20 @@ deno task dev        # denobuild + packages/server file-server (port from packag
 ```jsonc
 {
   "theme": {
-    "preset": "minimal-dark", // a CSS file from packages/core/themes
+    "preset": "violet", // a brand skin CSS file from packages/core/themes
     "mode": "auto", // light | dark | auto
-    "custom": { "primary_color": "#6750a4", "radius": "16px" } // token overrides
+    "custom": { "primary_color": "#6750a4", "font_family": "Inter" } // BeerCSS token overrides
   }
 }
 ```
 
-Add a preset by dropping a `<name>.css` in `packages/core/themes` — it is copied into the
-build automatically.
-
-| `minimal-dark`                                                        | `light-simple`                                                        |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| ![minimal-dark theme](docs/assets/screenshots/theme-minimal-dark.png) | ![light-simple theme](docs/assets/screenshots/theme-light-simple.png) |
-
-Presets are responsive (one column on phones, a two-column card grid on desktops) and
-ship with contrast guards: a custom `primary_color` automatically derives a readable
-button ink and a AA-legible link tint per background. See [docs/theming.md](docs/theming.md).
+A skin is a small CSS file in `packages/core/themes` that overrides only the BeerCSS
+color tokens (`--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`,
+`--font`); `linklist-base.css` is always loaded for the shared layout. Add a skin by
+dropping a `<name>.css` in `packages/core/themes` — it is copied into the build
+automatically. A custom `primary_color` automatically derives a readable `--on-primary`
+ink; surfaces and elevation stay owned by BeerCSS per light/dark mode. The whole
+`--ll-*` token system was removed. See [docs/theming.md](docs/theming.md).
 
 ---
 
@@ -135,8 +139,8 @@ button ink and a AA-legible link tint per background. See [docs/theming.md](docs
 │   │   │   ├── lib/            #   pure engine: types, schema, theme, seo, generate
 │   │   │   └── components/     #   Preact UI + signals + markdown renderer
 │   │   ├── schema/             #   config.schema.json (published for editors + the site)
-│   │   ├── themes/             #   BeerCSS theme presets (minimal-dark, light-simple)
-│   │   └── public/             #   index.html shell, config.json, manifest, favicon, robots
+│   │   ├── themes/             #   linklist-base.css + BeerCSS brand skins (violet, indigo)
+│   │   └── public/             #   index.html shell, config.json, manifest, favicon, robots, islands/
 │   └── server/                 # static file-server (serveDir) used for local preview
 ├── scripts/                    # buildit configs + export/version tooling (I/O edge)
 ├── .github/workflows/          # ci.yml (gate) + pages.yml (build & deploy)
@@ -172,6 +176,7 @@ Full guides live in [`docs/`](docs):
 - [Getting started](docs/guide.md)
 - [Configuration reference](docs/configuration.md)
 - [Theming](docs/theming.md)
+- [Islands](docs/islands.md)
 - [Deploy](docs/deploy.md)
 - [API reference](docs/api-reference.md)
 - [Site templates](docs/templates/README.md) — starter `config.json` files

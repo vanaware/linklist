@@ -1,0 +1,22 @@
+/*
+ * Brand skin: indigo (was the "light-simple" preset).
+ *
+ * A skin overrides ONLY the BeerCSS color tokens — never surfaces, radius or
+ * elevation, which BeerCSS owns per light/dark mode. `:root` sets the light-mode
+ * brand, `body.dark` the tone that stays readable on the dark palette. Pick via
+ * `config.theme.preset: "indigo"`; `config.theme.custom.primary_color` layers a
+ * further brand override on top at runtime (see `lib/theme.ts`).
+ */
+:root {
+  --primary: #4f46e5;
+  --on-primary: #ffffff;
+  --primary-container: #e0e0ff;
+  --on-primary-container: #1a1760;
+}
+
+body.dark {
+  --primary: #a5b4fc;
+  --on-primary: #1e1b40;
+  --primary-container: #37357a;
+  --on-primary-container: #e0e0ff;
+}

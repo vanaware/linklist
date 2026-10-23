@@ -37,6 +37,21 @@
       "body": "I write about **privacy-first** tooling and the open web.\n\n- Deno & Preact\n- Accessibility"
     },
     {
+      "format": "island",
+      "island": "Counter",
+      "params": { "start": 3, "step": 2, "label": "Try an island" }
+    },
+    {
+      "format": "island",
+      "island": "Counter",
+      "params": { "start": 100, "step": 10, "label": "Same island, separate state" }
+    },
+    {
+      "format": "island",
+      "island": "DemoWidget",
+      "params": { "title": "Two-way reactivity" }
+    },
+    {
       "format": "row",
       "title": "Mastodon",
       "url": "https://mastodon.social/@janedoe",
@@ -52,11 +67,10 @@
     }
   ],
   "theme": {
-    "preset": "minimal-dark",
+    "preset": "violet",
     "mode": "auto",
     "custom": {
-      "primary_color": "#a78bfa",
-      "radius": "12px"
+      "primary_color": "#a78bfa"
     }
   },
   "footer": {

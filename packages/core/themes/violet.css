@@ -1,0 +1,22 @@
+/*
+ * Brand skin: violet (was the "minimal-dark" preset).
+ *
+ * A skin overrides ONLY the BeerCSS color tokens — never surfaces, radius or
+ * elevation, which BeerCSS owns per light/dark mode. `:root` sets the light-mode
+ * brand, `body.dark` the tone that stays readable on the dark palette. Pick via
+ * `config.theme.preset: "violet"`; `config.theme.custom.primary_color` layers a
+ * further brand override on top at runtime (see `lib/theme.ts`).
+ */
+:root {
+  --primary: #7c4dff;
+  --on-primary: #ffffff;
+  --primary-container: #eaddff;
+  --on-primary-container: #21005d;
+}
+
+body.dark {
+  --primary: #c4b5fd;
+  --on-primary: #1e1b2e;
+  --primary-container: #4f378a;
+  --on-primary-container: #e9ddff;
+}

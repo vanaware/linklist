@@ -14,9 +14,9 @@ plain data structure you can run anywhere Deno or the browser runs.
 
 | Area         | Exports                                                                                                                                                                                                 |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Config types | `LinklistConfig`, `Profile`, `ProfileField`, `LinkItem`, `Block` (`LinkBlock`/`SectionBlock`/`ImageBlock`), `BlockFormat`, `FooterConfig`, `ThemeConfig`, `ThemeTokens`, `ContentSection` |
+| Config types | `LinklistConfig`, `Profile`, `ProfileField`, `LinkItem`, `Block` (`LinkBlock`/`SectionBlock`/`ImageBlock`/`IslandBlock`), `BlockFormat`, `FooterConfig`, `ThemeConfig`, `ThemeTokens`, `ContentSection` |
 | Validation   | `parseAndValidate`, `validateConfig` (+ `ValidationResult` types) — builds each block's shape from its `format`                                                                                         |
-| Theme        | `resolveThemeCss`, `tokensToCss`, `themeColor`, `themeBodyClass`, `presetVariable`, `readableInk`, `readableLink`                                                                                       |
+| Theme        | `tokensToCss`, `themeColor`, `themeBodyClass`, `readableInk` — map `theme.custom` onto BeerCSS color tokens (`--primary`, `--on-primary`, …)                        |
 | SEO head     | `buildHead`, `buildJsonLd`, `faviconDataUri`, `escapeHtml`, `safeJson`                                                                                                                                  |
 | Static files | `generateSite`, `renderIndexHtml`, `renderManifest`, `renderRobotsTxt` — config → `index.html` / `manifest.json` / `robots.txt` text                                                                    |
 | CLI          | `linklistCommand` (Cliffy: `linklist build` / `linklist validate`), `buildSiteFiles` — importable command objects; parsing never runs on import                                                         |
@@ -37,7 +37,7 @@ const raw = `{
   "blocks": [
     { "format": "row", "title": "GitHub", "url": "https://github.com/ada" }
   ],
-  "theme": { "preset": "minimal-dark" }
+  "theme": { "preset": "violet" }
 }`;
 
 const result = parseAndValidate(raw,);
@@ -65,13 +65,14 @@ A linklist site is one JSON file. Minimum viable config:
   "blocks": [
     { "format": "row", "title": "GitHub", "url": "https://github.com/ada" }
   ],
-  "theme": { "preset": "minimal-dark" }
+  "theme": { "preset": "violet" }
 }
 ```
 
 `blocks` is the page in declared order. Every block is a **pure, self-contained item**
 naming one predefined `format`: `row`/`button`/`card` (a link, needs `title`+`url`),
-`text` (a Markdown section) or `figure` (a standalone image),
+`text` (a Markdown section), `figure` (a standalone image) or `island` (an interactive
+component hydrated from `public/islands/`),
 interleaved freely. Everything
 else is optional: which profile fields show on screen (`profile.hide`), per-link thumbnails
 (`image`/`image_alt`), head/social metadata as `profile` overrides (`title`/`description`/

@@ -9,26 +9,27 @@ next task.
 - **UI stack — retained from mdBlog**: Preact + `@preact/signals` (components/state),
   **BeerCSS** for styling (loaded via **CDN**, exactly as mdBlog does today), and the
   **Markdown** pipeline for user-authored text.
-- **Islands roadmap (future, load-bearing)**: interactive `config.blocks` will reuse the
-  mdBlog island model — a block declares an island that hydrates a live Preact component
-  at runtime. This REQUIRES `preact` + `@preact/signals` to remain in the browser bundle
-  as a **single shared instance** (never stripped, never a second copy), so island
-  components and the `components/state.ts` store react against the same Preact/signals
-  graph. Today the whole client ships as one `linklist.js` bundle, which guarantees that
-  one instance; if islands are later authored as external/runtime modules they must resolve
-  `preact` and `@preact/signals` through a shared **import map** (or the same CDN pins)
-  instead of bundling a duplicate. This is why the signals store stays even though the
-  current page is a one-shot render with no live state.
+- **Islands — delivered as `island` blocks**: an interactive `config.blocks` entry reuses
+  the mdBlog island model — a block names a plain-JS Preact component shipped in
+  `packages/core/public/islands/<name>.js`, rendered as a static `[data-island]`
+  placeholder at build and hydrated in place at runtime by `entry.ts`. This REQUIRES
+  `preact` + `@preact/signals` to remain in the browser bundle as a **single shared
+  instance** (never stripped, never a second copy): `entry.ts` publishes that runtime on
+  `globalThis.linklistRuntime` and every island module reads it instead of importing its
+  own Preact, so island signals react against the same graph as `components/state.ts`.
+  Today the whole client ships as one `linklist.js` bundle, which guarantees that single
+  instance. A missing/failed island leaves the static placeholder visible — the page never
+  breaks. The `island` name is validated as a safe identifier (never a path).
 - **Render model — static head + client-rendered body**: the build bakes the
   per-profile SEO `<head>`, the PWA `manifest.json` and `robots.txt` into real files
   (via `core/src/lib/generate.ts`), so crawlers and link-preview scrapers read the
   metadata **without JavaScript**. `index.html` also ships a generic `<noscript>`
-  Linklist fallback listing the `links` blocks in declared order (sections and figures
-  are skipped; `profile.hide` is honored there too). At runtime `linklist.js`
+  Linklist fallback listing the `links` blocks in declared order (sections, figures and
+  islands are skipped; `profile.hide` is honored there too). At runtime `linklist.js`
   (from
   `core/src/entry.ts`) fetches `./config.json` (relative, so it works at a domain root
-  OR subfolder), validates it, applies the theme and hydrates the
-  Preact `App` into `#app` — it no longer injects the head (`applyHead`/`headFragment` are
+  OR subfolder), validates it, applies the theme, hydrates the
+  Preact `App` into `#app` and then hydrates any `island` blocks in place — it no longer injects the head (`applyHead`/`headFragment` are
   gone). The config is still NEVER embedded; no-JS visitors get the `<noscript>`
   fallback only.
 - **Build = codegen + buildit**: `deno task linklist:build` runs the core Cliffy CLI
@@ -50,11 +51,13 @@ next task.
   (`npm:arktype`). Structure mirrors `packages/core/src/lib/types.ts`. **Content
   model** — _pure blocks_: each `config.blocks` entry is a single self-contained item
   that names a predefined `format` — `row`/`button`/`card` (a link, needs `title`+`url`),
-  `text` (a Markdown section, needs `body`/`markdown`) or `figure` (needs `image`+`image_alt`).
+  `text` (a Markdown section, needs `body`/`markdown`), `figure` (needs `image`+`image_alt`)
+  or `island` (needs a safe `island` name; optional `params` object → component props).
   The validator
   (`lib/schema.ts` `classifyBlock`) switches on `format`, checks that format's required
   fields, and builds a discriminated render shape — so downstream code still switches on
-  `block.type`: `link` (carrying its `format` + a `LinkItem`), `section` or `image`. There is no `type` key and no nesting (no `links: []` array) in the authored
+  `block.type`: `link` (carrying its `format` + a `LinkItem`), `section`, `image` or
+  `island` (`name` + `params`). There is no `type` key and no nesting (no `links: []` array) in the authored
   config; consecutive `link` blocks group into one list on screen, any other block breaks
   the run. `profile` doubles as the head-metadata source: optional head-only
   overrides `title`/`description`/`image`/`url`/`twitter`/`lang`/`favicon` fall back to
@@ -90,11 +93,17 @@ next task.
   `.github/workflows/jsr-publish.yml` is the **release gate** (tests → lint:doc →
   sanitize-version → README check → publish dry-run → publish, on a `v*.*` tag); `packages/core/dist/` stays git-tracked on purpose (JSR publishes only
   tracked files).
-- **Themes live in core**: BeerCSS presets are selectable via
-  `config.theme.preset` + token overrides and live in
-  `packages/core/themes/{minimal-dark,light-simple}.css`, merged with `config.theme.custom`
-  by `core/src/lib/theme.ts`. There is **no** separate themes package, and no runtime
-  third-party extension hook (`theme.script`) until the engine is stable.
+- **Themes live in core**: the page is **pure BeerCSS**. A single shared
+  `packages/core/themes/linklist-base.css` carries the unavoidable layout (column
+  width, landmark reset, full-width buttons, vertical rhythm); brand **skins**
+  (`violet.css`, `indigo.css`) override only BeerCSS color tokens
+  (`--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`,
+  `--font`). `config.theme.preset` selects a skin; `config.theme.custom` maps to
+  those same tokens via `core/src/lib/theme.ts`; dark/light come from BeerCSS's
+  `body.dark`/`body.light`, and `mode: "auto"` is resolved without FOUC by a
+  small inline `<head>` script. The old namespaced `--ll-*` system is gone.
+  There is **no** separate themes package, and no runtime third-party extension
+  hook (`theme.script`) until the engine is stable.
 - **Language**: all code, comments, logs, tests and docs are written in English.
 
 ## Milestones
@@ -324,13 +333,46 @@ next task.
   fetching). No backward-compatibility layer is retained — this is a breaking release.
   Interactive content is planned to return as island blocks (see M9). Gates: `tests`,
   `check:all`, `lint:doc`, `validate` and `denobuild` green.
-- ⏭️ **M9 (roadmap — not started)** — Island blocks: let a `config.blocks` entry declare an
-  interactive island (a Preact component + signals) that hydrates in place, as
-  `@vanaware/mdBlog` does. Precondition already met: `preact` + `@preact/signals` stay in
-  the runtime bundle as one shared instance and `components/state.ts` keeps the signals
-  store. When island authoring moves out of core, decide same-bundle vs import-map
-  exposure so islands never load a duplicate Preact/signals. (See the *Islands roadmap*
-  decision above.)
+- ✅ **M9** — Island blocks (the mdBlog island model, recovered). A `config.blocks` entry
+  can now declare `format: "island"` with a safe `island` file name and an optional
+  `params` object. `types.ts` adds `IslandBlock` (`type: "island"`, `name`, `params?`) to
+  the `Block` union and `"island"` to `BlockFormat`; `schema.ts` classifies it (validating
+  the name against `/^[A-Za-z][A-Za-z0-9_-]*$/` so it can never be a path) and threads
+  `params`; `config.schema.json` gains an `IslandBlock` definition. A new `components/IslandBlock.ts`
+  renders a static `[data-island]` / `data-props` placeholder (keeps SSR + tests pure — no
+  `import()` in core), and `App.renderBlocks` renders it inline (breaking a link run like
+  any non-link block). `entry.ts` publishes the single shared Preact/Signals runtime on
+  `globalThis.linklistRuntime` (`h/render/hydrate/html/signal/computed/effect/batch/useSignal/useComputed`),
+  then — after the app mounts — hydrates each placeholder by `import()`-ing
+  `./islands/<name>.js` (relative, subfolder-safe) and `render`-ing the exported component
+  with the parsed props; any failure leaves the placeholder visible. Two example islands
+  (`public/islands/Counter.js`, `DemoWidget.js`) ship in core and one is referenced from the
+  sample config. No backward-compat concerns (additive feature). Docs: new
+  `docs/islands.md` + island coverage in guide/configuration/api-reference/READMEs. Gates:
+  `tests` (island classification, unsafe-name rejection, placeholder render), `check:all`,
+  `lint:doc`, `validate` and `denobuild` (with `public/islands/**` copied to `dist/`) green.
+- ⏭️ **M10 (roadmap — not started)** — Consider authoring-time ergonomics for islands (a
+  typed island registry / build check that a referenced `./islands/<name>.js` exists) and,
+  if islands ever move out of the single bundle, decide the same-bundle vs import-map
+  exposure so they never load a duplicate Preact/signals.
+- ✅ **M11** — Pure BeerCSS + native theming (breaking). Replaced the bespoke `--ll-*`
+  token system entirely: components now emit pure BeerCSS markup (`header.profile` +
+  `img.circle` avatar, `ul.grid`/`li.s12.m6`/`a.button` links, `figure`/`img.round`,
+  bare `<i>` Material glyphs — the reserved `.icon` class is never used for icons), and
+  dark/light come from BeerCSS's own `body.dark`/`body.light`. Presets became brand
+  **skins** that override only color tokens: `minimal-dark`→`violet`, `light-simple`→
+  `indigo`, plus a shared color-free `linklist-base.css`. `ThemeTokens` shrank to
+  `primary_color` + `font_family`; `tokensToCss` now emits BeerCSS tokens (`--primary`,
+  `--on-primary` via `readableInk`, `--primary-container`, `--on-primary-container`,
+  `--font`); `resolveThemeCss`/`presetVariable`/`readableLink` and `SHADOWS` were removed;
+  `themeBodyClass` returns `dark`/`light`/`""` (auto). `generate.ts` chains
+  `beer.min.css`→`linklist-base.css`→`./<preset>.css`→Material icons, bakes an inline
+  `prefers-color-scheme` script for `auto` (no FOUC), and rewrites the `noscript`
+  fallback in the same BeerCSS markup; `entry.ts` `applyTheme` inlines only custom tokens
+  and syncs `auto` via `matchMedia`. Updated `config.json`/`config.schema.json`/CLI,
+  tests and docs (new `docs/beercss.md` reference). No backward-compatibility layer.
+  Gates green: `fmt`/`check:all`/`test`/`lint:doc`/`validate`/`denobuild` + in-browser
+  dark/light/auto check confirming `body.dark` and that islands follow the mode.
 
 ## Known environment note
 

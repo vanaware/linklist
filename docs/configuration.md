@@ -16,7 +16,7 @@ your editor.
 | `version` | string | no | Optional schema version stamp (recommended: `"2"`). |
 | `profile` | object | **yes** | Identity block rendered at the top **and** the source of the `<head>` metadata. |
 | `blocks` | array | **yes** | The ordered page content (see below). At least one link block (`row`/`button`/`card`). |
-| `theme` | object | **yes** | Preset + mode + token overrides. |
+| `theme` | object | **yes** | Brand skin (`preset`) + BeerCSS-native color scheme (`mode`) + brand overrides. |
 | `footer` | object | no | Optional "Last updated" note (a "Made with linklist" brand line always shows). |
 
 ## `profile`
@@ -84,13 +84,15 @@ link blocks are grouped into a single list on screen; any other block breaks the
 | `card` | an emphasized card link | `title`, `url` | same as `row` (usually with `image`) |
 | `text` | a Markdown content section | `body` (or `markdown`) | `title` |
 | `figure` | a standalone image/figure | `image`, `image_alt` | `caption` |
+| `island` | an interactive component hydrated at runtime | `island` (file name) | `params` |
 
 ```jsonc
 "blocks": [
   { "format": "button", "title": "GitHub", "url": "https://github.com/janedoe", "icon": "github" },
   { "format": "card", "title": "Blog", "url": "https://janedoe.dev", "image": "./assets/cover.svg", "image_alt": "Blog cover" },
   { "format": "text", "title": "About", "body": "Markdown **here**" },
-  { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" }
+  { "format": "figure", "image": "./assets/cover.svg", "image_alt": "…", "caption": "Latest post" },
+  { "format": "island", "island": "Counter", "params": { "start": 3, "step": 2 } }
 ]
 ```
 
@@ -109,26 +111,39 @@ The three link formats share one data shape; `format` picks only the presentatio
 | `new_tab` | boolean | no | Open in a new tab with `rel="noopener"`. Default `false`. |
 | `nofollow` | boolean | no | Add `rel="nofollow"`. Default `false`. |
 
+### Island field (`island`)
+
+An `island` block renders a static placeholder at build time and hydrates a
+plain-JS Preact component from `./islands/<island>.js` at runtime, reusing the
+app's single shared Preact/Signals instance. See [Islands](islands.md) for the
+full model, authoring guide and the `params` → props contract.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `island` | string | **yes** | Safe file name (letters/digits/`_`/`-`, starts with a letter) — becomes `./islands/<island>.js`. |
+| `params` | object | no | Passed verbatim as the component's props (rendered via Preact, never raw HTML). |
+
 ## `theme`
 
 See [Theming](theming.md) for the full walkthrough.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `preset` | string | **yes** | Name of a bundled preset (a CSS file in `packages/core/themes`), e.g. `minimal-dark`. |
-| `mode` | `"light" \| "dark" \| "auto"` | no | Color-scheme behavior. Default `auto`. |
-| `custom` | object | no | Token overrides merged on top of the preset. |
+| `preset` | string | **yes** | Name of a bundled brand skin (a CSS file in `packages/core/themes`), e.g. `violet`. |
+| `mode` | `"light" \| "dark" \| "auto"` | no | BeerCSS-native color scheme. Default `auto` (follows the OS, resolved with no flash). |
+| `custom` | object | no | Brand color/font overrides merged on top of the skin (see [Theming](theming.md)). |
 
-`custom` tokens: `primary_color`, `background_color`, `text_color`, `font_family`,
-`radius` (e.g. `"12px"`), `shadow` (`"none" | "small" | "medium" | "large"`).
+`custom` tokens: `primary_color` (→ `--primary`/`--on-primary`) and `font_family`
+(→ `--font`). Background, text color, radius and elevation are owned by BeerCSS
+per light/dark mode and are no longer author-tunable.
 
 ## Validation rules (semantic)
 
 Beyond the structural types, `parseAndValidate` enforces:
 
 - every block sets a known `format`, and its fields satisfy that format's requirements
-  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, a link format needs
-  `title`+`url`);
+  (a `text` block needs a body, a `figure` needs `image`+`image_alt`, an `island`
+  needs a safe `island` name, a link format needs `title`+`url`);
 - `blocks` contains at least one link block (`row`/`button`/`card`) — the page is never
   empty;
 - every link `url` is a valid absolute URL;
@@ -147,7 +162,7 @@ Beyond the structural types, `parseAndValidate` enforces:
   "blocks": [
     { "format": "row", "title": "GitHub", "url": "https://github.com/janedoe" }
   ],
-  "theme": { "preset": "minimal-dark" }
+  "theme": { "preset": "violet" }
 }
 ```
 

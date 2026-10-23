@@ -45,9 +45,9 @@ commit messages are written in **English**. No exceptions.
 - **Components**: keep UI modularized in `packages/core/src/components/`. There are no
   islands / `hydrateIslands()` — the page is a single client-rendered Preact tree.
 - **Everything in core**: the theme engine (`core/src/lib/theme.ts`) lives in
-  `packages/core`, alongside the CSS presets in `packages/core/themes`. There is no
-  separate themes package, and no runtime third-party `theme.script` hook until the
-  engine is stable.
+  `packages/core`, alongside the shared `linklist-base.css` and the brand-skin CSS in
+  `packages/core/themes`. There is no separate themes package, and no runtime
+  third-party `theme.script` hook until the engine is stable.
 - **Markdown for user text**: end-user text (bio / about / section copy, link
   subtitle, footer) is authored as **Markdown** and rendered by the self-contained
   GFM → Preact VNode renderer in `core/src/components/markdown.ts` (`renderMarkdown` /
@@ -57,9 +57,18 @@ commit messages are written in **English**. No exceptions.
 ## 3. UI & Styling (BeerCSS)
 
 - **BeerCSS (Material Design 3)** is the styling system. No Tailwind CSS.
-- **Themes**: themes are **BeerCSS presets** selected by `config.theme.preset`
-  (e.g. light / dark), with token overrides (colors, radius, shadow, font) mapped
-  to BeerCSS / `material-dynamic-colors` CSS variables — not hand-written CSS.
+- **Pure BeerCSS markup**: components emit BeerCSS tags/classes directly (`a.button`,
+  `ul.grid` + `li.s12.m6`, `img.circle`/`img.round`, `h*`, `.small-text`/`.medium-text`,
+  bare `<i>` Material glyphs). Do NOT reintroduce a namespaced `--ll-*` token system or
+  bespoke component classes; the reserved `.icon` class must never be used to style an
+  icon. `docs/beercss.md` is the source of truth for available classes/tokens.
+- **Theming**: dark/light come from BeerCSS's own `body.dark`/`body.light`; `mode: "auto"`
+  is resolved without FOUC by a small inline `<head>` script. `config.theme.preset` selects
+  a **brand skin** (`violet`, `indigo`) that overrides only BeerCSS color tokens, and
+  `config.theme.custom` (`primary_color`, `font_family`) maps onto those tokens via
+  `theme.ts` `tokensToCss` — never hand-written layout CSS. Shared, color-free layout
+  (column width, landmark reset, full-width buttons, vertical rhythm) lives once in
+  `linklist-base.css`.
 - **Open decision (tracked in `CURRENT.md`)**: whether BeerCSS + fonts are served
   from a **CDN** (as mdBlog does today) or **self-hosted** in the bundle. Prefer
   self-hosting when it does not compromise the simplicity of the pipeline; until

@@ -54,16 +54,16 @@ export interface BrandIconProps {
   name: string;
 }
 
-/** Render an inline SVG brand mark, or a Material Symbols fallback. */
+/** Render an inline SVG brand mark, or a Material Symbols `<i>` fallback. */
 export function BrandIcon({ name, }: BrandIconProps,) {
   const path = BRAND_SVGS[name.toLowerCase()];
   if (path) {
     return html`
       <svg
-        class="brand-icon"
         viewBox="0 0 24 24"
         width="20"
         height="20"
+        fill="currentColor"
         aria-hidden="true"
         focusable="false"
       >
@@ -71,5 +71,7 @@ export function BrandIcon({ name, }: BrandIconProps,) {
       </svg>
     `;
   }
-  return html`<i class="icon" aria-hidden="true">${name}</i>`;
+  // Bare `<i>`: BeerCSS renders `i` as a Material Symbols glyph, so no class is
+  // needed (`class="icon"` would collide with BeerCSS's own `.icon` container).
+  return html`<i aria-hidden="true">${name}</i>`;
 }

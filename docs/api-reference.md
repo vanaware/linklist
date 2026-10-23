@@ -42,8 +42,8 @@ Described in full in the [Configuration reference](configuration.md).
 | --- | --- |
 | `LinklistConfig` | Top-level config object (`blocks` is the ordered page content; `footer` optional). |
 | `Profile`, `LinkItem`, `ContentSection` | Identity (screen fields + head-only overrides + `hide`), links (incl. `image`/`image_alt`), Markdown bodies. |
-| `Block`, `LinkBlock`, `SectionBlock`, `ImageBlock` | The `blocks[]` discriminated union the validator builds from each authored block's `format`. |
-| `BlockFormat` | `"row" \| "button" \| "card" \| "text" \| "figure"` — the predefined presentation each block names. |
+| `Block`, `LinkBlock`, `SectionBlock`, `ImageBlock`, `IslandBlock` | The `blocks[]` discriminated union the validator builds from each authored block's `format`. |
+| `BlockFormat` | `"row" \| "button" \| "card" \| "text" \| "figure" \| "island"` — the predefined presentation each block names. |
 | `FooterConfig` | Optional footer line (`show_last_updated`, `label`). |
 | `ProfileField` | `"tagline" \| "bio" \| "avatar" \| "location"` — values accepted by `profile.hide`. |
 | `ThemeConfig`, `ThemeTokens` | Appearance. |
@@ -55,7 +55,8 @@ Described in full in the [Configuration reference](configuration.md).
 Built on ArkType plus a **block classifier** and semantic cross-field checks: every
 authored `blocks[]` item names a `format`, and `validateConfig` builds each one's
 discriminated render shape (`row`/`button`/`card` → a `link`, `text` → a `section`,
-`figure` → an `image`) before returning the typed config.
+`figure` → an `image`, `island` → an `island` with a validated safe `name`) before
+returning the typed config.
 Pure — no I/O.
 
 ```ts
@@ -122,6 +123,7 @@ signals above (or explicit props where noted).
 | `LinkList`, `LinkRow` | Consecutive `link` blocks grouped into one list; `LinkRow` renders one `LinkItem` in its `format` (image thumbnail when `image` is set, else `icon`). |
 | `ContentSection` | One `section` block (heading + Markdown body). |
 | `ImageBlock` | One `image` block — a `<figure>` with `<img>` (alt guaranteed) and optional `<figcaption>`. |
+| `IslandBlock` | One `island` block — a static `[data-island]` placeholder (+ `data-props` JSON) that `entry.ts` hydrates from `./islands/<name>.js` at runtime. |
 | `MarkdownText` | Renders a Markdown string inline or as a block. |
 | `BrandIcon` | Icon for a `LinkItem.icon` name (Material symbols). |
 | `Footer` | Last-updated / custom footer line with the build version stamp. |
@@ -137,16 +139,14 @@ render(h(App, { config: validConfig }), document.getElementById("app"));
 
 ## Theme (`lib/theme.ts`)
 
-Pure string/CSS helpers. The caller supplies the preset CSS; core never reads the
-filesystem.
+Pure string/CSS helpers. `theme.custom` maps onto **BeerCSS design tokens**
+(`--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`,
+`--font`); surfaces and elevation stay owned by BeerCSS per light/dark mode.
 
 ```ts
-function tokensToCss(tokens?: ThemeTokens, fallbackBackground?: string): string  // :root { … } overrides (may be "")
-function resolveThemeCss(theme: ThemeConfig, presetCss: string): string
+function tokensToCss(tokens?: ThemeTokens): string  // :root { … } BeerCSS token block (may be "")
 function readableInk(background: string, darkInk?: string, lightInk?: string): string
-function readableLink(color: string, background: string, min?: number): string
-function presetVariable(presetCss: string, property: string): string | undefined
-function themeBodyClass(theme?: ThemeConfig): string      // "auto" | "light" | "dark"
+function themeBodyClass(theme?: ThemeConfig): string      // "dark" | "light" | "" (auto, resolved at runtime)
 function themeColor(theme?: ThemeConfig): string          // theme-color meta (default "#6750a4")
 ```
 
@@ -218,3 +218,11 @@ otherwise installs the config with `setConfig`, applies the theme (body class +
 preset CSS + `theme.custom` tokens), and renders `<App/>`. The `<head>` is NOT touched here
 — it is finalized into `index.html` at build time. The body is client-rendered and the
 config is never embedded.
+
+Before rendering, the entry publishes the shared Preact/Signals surface on
+`globalThis.linklistRuntime` (`h`, `render`, `hydrate`, `html`, `signal`, `computed`,
+`effect`, `batch`, `useSignal`, `useComputed`), then — after the app mounts — hydrates
+every `[data-island]` placeholder by dynamically importing its `./islands/<name>.js`
+module and rendering the exported component with the `data-props` as props. Islands
+reuse this single Preact instance (never a second copy); a missing/failed island simply
+leaves the static placeholder in place. See [Islands](islands.md).
